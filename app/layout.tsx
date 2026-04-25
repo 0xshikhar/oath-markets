@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter } from "next/font/google";
+import { Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./components/providers";
+import { cn } from "@/lib/utils";
+
+const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={cn("font-mono", jetbrainsMono.variable)}>
       <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
