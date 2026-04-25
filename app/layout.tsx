@@ -1,29 +1,32 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./components/providers";
-import { cn } from "@/lib/utils";
-
-const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
-  title: "Solana dApp Starter",
-  description: "A minimal Next.js starter powered by @solana/kit",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  ),
+  title: {
+    default: "OATH",
+    template: "%s · OATH",
+  },
+  description:
+    "Public commitment stakes on Solana with escrow, proof, and reputation.",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
     apple: "/icon.svg",
+  },
+  openGraph: {
+    title: "OATH",
+    description:
+      "Make a public oath. Stake real SOL. Follow through in public.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OATH",
+    description:
+      "Make a public oath. Stake real SOL. Follow through in public.",
   },
 };
 
@@ -33,8 +36,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-mono", jetbrainsMono.variable)}>
-      <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className="bg-background text-foreground antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>
