@@ -7,9 +7,12 @@
     "ci": "npm run build && npm run lint && npm run format:check",
     "codama:js": "codama run js",
     "dev": "next dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint",
+    "prisma:generate": "prisma generate",
     "setup": "npm run anchor-build && npm run codama:js",
     "start": "next start"
   },

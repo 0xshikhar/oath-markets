@@ -14,21 +14,34 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   --border: oklch(0.922 0 0);
-  --border-low: #f5f5f5;
+  --border-low: #ececec;
   --input: oklch(0.922 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --cream: #f5f5f5;
+  --cream: #f6f4ef;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: #ef4444;
   --ring: oklch(0.708 0 0);
   --radius: 0.625rem;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+  --app-font-sans: Inter, ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --app-font-mono: "SFMono-Regular", ui-monospace, "Cascadia Mono",
+    "Segoe UI Mono", Menlo, Monaco, Consolas, monospace;
+  --oath-black: #09090b;
+  --oath-surface: #111113;
+  --oath-border: #1e1e24;
+  --oath-muted: #3a3a44;
+  --oath-gold: #f5a623;
+  --oath-gold-dim: #a06b10;
+  --oath-green: #22c55e;
+  --oath-red: #ef4444;
+  --oath-blue: #3b82f6;
+  --oath-text: #f2f2f5;
+  --oath-muted-text: #8b8b9a;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -45,26 +58,26 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(0.09 0 0);
   --foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --card: oklch(0.205 0 0);
+  --primary: oklch(0.84 0.13 82);
+  --primary-foreground: oklch(0.145 0 0);
+  --muted: oklch(0.165 0 0);
+  --muted-foreground: oklch(0.68 0 0);
+  --card: oklch(0.13 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.13 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
-  --border-low: rgba(38, 38, 38, 0.5);
+  --border-low: rgba(255, 255, 255, 0.08);
   --input: oklch(1 0 0 / 15%);
-  --accent: oklch(0.269 0 0);
+  --accent: oklch(0.19 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --cream: #262626;
+  --cream: #171719;
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: #ef4444;
-  --ring: oklch(0.556 0 0);
-  --secondary: oklch(0.269 0 0);
+  --ring: oklch(0.84 0.13 82);
+  --secondary: oklch(0.19 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -84,6 +97,17 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-oath-black: var(--oath-black);
+  --color-oath-surface: var(--oath-surface);
+  --color-oath-border: var(--oath-border);
+  --color-oath-muted: var(--oath-muted);
+  --color-oath-gold: var(--oath-gold);
+  --color-oath-gold-dim: var(--oath-gold-dim);
+  --color-oath-green: var(--oath-green);
+  --color-oath-red: var(--oath-red);
+  --color-oath-blue: var(--oath-blue);
+  --color-oath-text: var(--oath-text);
+  --color-oath-muted-text: var(--oath-muted-text);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-muted: var(--muted);
@@ -103,12 +127,11 @@
   --color-ring: var(--ring);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-heading: var(--font-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -133,11 +156,20 @@
     @apply border-border outline-ring/50;
   }
 
-  body {
-    @apply antialiased bg-background text-foreground;
-    font-family: var(--font-sans);
-  }
   html {
-    @apply font-mono;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    background-image:
+      radial-gradient(circle at top, rgba(245, 166, 35, 0.08), transparent 28%),
+      radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.08), transparent 24%);
+  }
+
+  ::selection {
+    background: rgba(245, 166, 35, 0.25);
+    color: inherit;
   }
 }

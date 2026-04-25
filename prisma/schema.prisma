@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String        @id @default(cuid())
+  walletAddress    String        @unique
+  username         String?       @unique
+  bio              String?
+  avatarUrl        String?
+  worldIdVerified  Boolean       @default(false)
+  worldIdNullifier String?       @unique
+  notifyPlatform   Boolean       @default(true)
+  notifyTelegram   String?
+  notifyEmail      String?
+  notifyTime       String        @default("09:00")
+  timezone         String        @default("UTC")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  commitments      Commitment[]  @relation("MakerCommitments")
+  beliefs          Belief[]
+  comments         Comment[]
+  coachMessages    CoachMessage[]
+}
+
+model Commitment {
+  id                  String             @id @default(cuid())
+  onchainAddress      String?            @unique
+  slug                String             @unique
+  title               String
+  description         String?
+  category            CommitmentCategory
+  proofType           ProofType
+  stakeAmountLamports BigInt
+  slashDestination    SlashDest          @default(TREASURY)
+  startDate           DateTime
+  endDate             DateTime
+  totalDays           Int
+  requiredProofDays   Int
+  status              CommitmentStatus   @default(ACTIVE)
+  isPublic            Boolean            @default(true)
+  proofCount          Int                @default(0)
+  completionRatio     Float?
+  resolvedAt          DateTime?
+  makerId             String
+  maker               User               @relation("MakerCommitments", fields: [makerId], references: [id])
+  proofs              Proof[]
+  beliefs             Belief[]
+  comments            Comment[]
+  coachMessages       CoachMessage[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([makerId])
+  @@index([status])
+  @@index([isPublic])
+  @@index([slug])
+}
+
+model Proof {
+  id            String     @id @default(cuid())
+  commitmentId  String
+  commitment    Commitment @relation(fields: [commitmentId], references: [id])
+  dayNumber     Int
+  textContent   String?
+  imageUrl      String?
+  linkUrl       String?
+  contentHash   String?
+  onchainTxSig  String?
+  publicNote    String?
+  createdAt     DateTime   @default(now())
+
+  @@unique([commitmentId, dayNumber])
+  @@index([commitmentId])
+}
+
+model Belief {
+  id                   String       @id @default(cuid())
+  commitmentId         String
+  commitment           Commitment   @relation(fields: [commitmentId], references: [id])
+  believerId           String
+  believer             User         @relation(fields: [believerId], references: [id])
+  stakeAmountLamports  BigInt
+  onchainAddress       String?
+  onchainTxSig         String
+  status               BeliefStatus @default(ACTIVE)
+  settledAt            DateTime?
+  createdAt            DateTime     @default(now())
+
+  @@unique([commitmentId, believerId])
+  @@index([commitmentId])
+}
+
+model CoachMessage {
+  id            String       @id @default(cuid())
+  commitmentId  String
+  commitment    Commitment   @relation(fields: [commitmentId], references: [id])
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  role          MessageRole
+  content       String
+  dayNumber     Int?
+  trigger       CoachTrigger
+  createdAt     DateTime     @default(now())
+
+  @@index([commitmentId])
+}
+
+model Comment {
+  id            String     @id @default(cuid())
+  commitmentId  String
+  commitment    Commitment @relation(fields: [commitmentId], references: [id])
+  authorId      String
+  author        User       @relation(fields: [authorId], references: [id])
+  content       String
+  createdAt     DateTime   @default(now())
+}
+
+enum CommitmentCategory {
+  FITNESS
+  LEARNING
+  CREATIVE
+  WORK
+  HEALTH
+  FINANCIAL
+  CUSTOM
+}
+
+enum ProofType {
+  TEXT
+  PHOTO
+  LINK
+  GITHUB_COMMIT
+  CUSTOM
+}
+
+enum SlashDest {
+  BURN
+  DONATE
+  TREASURY
+}
+
+enum CommitmentStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+  ABANDONED
+}
+
+enum BeliefStatus {
+  ACTIVE
+  WON
+  LOST
+}
+
+enum MessageRole {
+  COACH
+  USER
+}
+
+enum CoachTrigger {
+  DAILY_CHECKIN
+  PROOF_SUBMITTED
+  STREAK_RISK
+  MILESTONE
+  COMPLETION
+  FAILURE
+}
