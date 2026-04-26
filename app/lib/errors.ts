@@ -7,7 +7,7 @@ import {
   VAULT_ERROR__VAULT_ALREADY_EXISTS,
   VAULT_ERROR__INVALID_AMOUNT,
   type VaultError,
-} from "../generated/vault";
+} from "./generated/vault";
 
 const VAULT_ERROR_CODES: Record<number, VaultError> = {
   [VAULT_ERROR__VAULT_ALREADY_EXISTS]: VAULT_ERROR__VAULT_ALREADY_EXISTS,

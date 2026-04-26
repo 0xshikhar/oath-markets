@@ -11,7 +11,7 @@ import {
   getDepositInstruction,
   getWithdrawInstruction,
   getWithdrawInstructionAsync,
-} from "../generated/vault";
+} from "../lib/generated/vault";
 import { parseTransactionError } from "../lib/errors";
 import { useCluster } from "./cluster-context";
 

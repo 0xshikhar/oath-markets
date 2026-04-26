@@ -1,10 +1,15 @@
 import type { NextConfig } from "next";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
+const rootDir = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["ws"],
   // @solana/kit-plugin-payer's browser bundle has a spurious `import 'fs'`
   // from the payerFromFile export. Stub it out for the client bundle.
   turbopack: {
+    root: rootDir,
     resolveAlias: {
       fs: { browser: "./empty-module.js" },
     },
