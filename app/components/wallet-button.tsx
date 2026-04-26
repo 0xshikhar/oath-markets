@@ -69,13 +69,9 @@ export function WalletButton() {
                   disabled={status === "connecting"}
                   className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition hover:bg-cream disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {connector.icon && (
-                    <img
-                      src={connector.icon}
-                      alt=""
-                      className="h-5 w-5 rounded"
-                    />
-                  )}
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-oath-surface text-[0.62rem] uppercase text-oath-muted-text">
+                    {connector.name.slice(0, 1)}
+                  </span>
                   <span>{connector.name}</span>
                 </button>
               ))}
