@@ -1,6 +1,6 @@
 # oath-markets
 
-Next.js starter with Tailwind CSS, `@solana/kit`, and an Anchor vault program example.
+OATH is a Next.js app for public commitments, on-chain escrow, and reputation tracking on Solana.
 
 ## Getting Started
 
@@ -10,18 +10,18 @@ npx -y create-solana-dapp@latest -t solana-foundation/templates/kit/oath-markets
 
 ```shell
 npm install
-npm run setup   # Builds the Anchor program and generates the TypeScript client
+npm run setup   # Builds the OATH Anchor program and generates the TypeScript client
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), connect your wallet, and interact with the vault.
+Open [http://localhost:3000](http://localhost:3000), connect your wallet, and explore the OATH surfaces.
 
 ## What's Included
 
 - **Wallet connection** via wallet-standard with auto-discovery and dropdown UI
 - **Cluster switching** — devnet, testnet, mainnet, and localnet from the header
 - **Wallet balance** display with airdrop button (devnet/testnet/localnet)
-- **SOL Vault program** — deposit and withdraw SOL from a personal PDA vault
+- **OATH Anchor program** — commitment escrow, proof records, believer co-staking, and reputation PDAs
 - **Toast notifications** with explorer links for every transaction
 - **Error handling** — human-readable messages for common Solana and program errors
 - **Codama-generated client** — type-safe program interactions using `@solana/kit`
@@ -47,9 +47,10 @@ Open [http://localhost:3000](http://localhost:3000), connect your wallet, and in
 │   │   ├── grid-background.tsx  # Solana-branded decorative grid
 │   │   ├── providers.tsx        # Wallet + theme providers
 │   │   ├── theme-toggle.tsx     # Light/dark mode toggle
-│   │   ├── vault-card.tsx       # Vault deposit/withdraw UI
+│   │   ├── vault-card.tsx       # Legacy vault UI scaffold
 │   │   └── wallet-button.tsx    # Wallet connect/disconnect dropdown
-│   ├── generated/vault/        # Codama-generated program client
+│   ├── generated/vault/        # Legacy Codama-generated program client
+│   ├── generated/oath/         # OATH Codama-generated program client
 │   ├── lib/
 │   │   ├── wallet/             # Wallet-standard connection layer
 │   │   │   ├── types.ts        # Wallet types
@@ -66,7 +67,7 @@ Open [http://localhost:3000](http://localhost:3000), connect your wallet, and in
 │   │   └── explorer.ts         # Explorer URL builder + address helpers
 │   └── page.tsx                # Main page
 ├── anchor/                     # Anchor workspace
-│   └── programs/vault/         # Vault program (Rust)
+│   └── programs/oath/          # OATH program (Rust)
 └── codama.json                 # Codama client generation config
 ```
 
@@ -88,14 +89,14 @@ To test against a local validator instead of devnet:
    anchor build
    anchor deploy
    cd ..
-   npm run codama:js   # Regenerate client with local program ID
+   npm run codama:oath # Regenerate the OATH Codama client from the Anchor IDL
    ```
 
 3. **Switch to localnet** in the app using the cluster selector in the header.
 
-## Deploy Your Own Vault
+## Deploy Your Own OATH Program
 
-The included vault program is already deployed to devnet. To deploy your own:
+The OATH program is intended for localnet/devnet development first. To deploy your own:
 
 ### Prerequisites
 
@@ -131,7 +132,7 @@ The included vault program is already deployed to devnet. To deploy your own:
 
 4. **Regenerate the client and restart**
    ```bash
-   npm run setup   # Rebuilds program and regenerates client
+   npm run setup   # Rebuilds the OATH program and regenerates the client
    npm run dev
    ```
 
@@ -144,17 +145,17 @@ npm run anchor-build   # Build the program first
 npm run anchor-test    # Run tests
 ```
 
-The tests are in `anchor/programs/vault/src/tests.rs` and automatically use the program ID from `declare_id!`.
+The tests are in `anchor/programs/oath/src/tests.rs` and automatically use the program ID from `declare_id!`.
 
 ## Regenerating the Client
 
-If you modify the program, regenerate the TypeScript client:
+If you modify the OATH program, regenerate the TypeScript client:
 
 ```bash
-npm run setup   # Or: npm run anchor-build && npm run codama:js
+npm run codama:oath
 ```
 
-This uses [Codama](https://github.com/codama-idl/codama) to generate a type-safe client from the Anchor IDL.
+This uses [Codama](https://github.com/codama-idl/codama) to generate a type-safe client from the OATH Anchor IDL.
 
 ## Learn More
 
