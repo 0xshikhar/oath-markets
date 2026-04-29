@@ -44,13 +44,13 @@ export function WalletButton() {
       <div className="relative" ref={ref}>
         <button
           onClick={() => (isOpen ? close() : open())}
-          className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground shadow-xs transition hover:bg-primary/90"
+          className="cursor-pointer rounded-md border border-border-low bg-primary px-4 py-2 text-xs font-medium text-primary-foreground shadow-xs transition hover:bg-primary/90"
         >
           Connect Wallet
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-border-low bg-card p-3 shadow-lg">
+          <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-md border border-border-low bg-card p-3 shadow-lg">
             <p className="mb-2 text-xs font-medium text-muted">
               Choose a wallet
             </p>
@@ -67,9 +67,9 @@ export function WalletButton() {
                     }
                   }}
                   disabled={status === "connecting"}
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition hover:bg-cream disabled:opacity-50 disabled:pointer-events-none"
+                  className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition hover:bg-cream disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-oath-surface text-[0.62rem] uppercase text-oath-muted-text">
+                  <span className="flex h-5 w-5 items-center justify-center rounded border border-oath-border bg-oath-surface text-[0.62rem] uppercase text-oath-muted-text">
                     {connector.name.slice(0, 1)}
                   </span>
                   <span>{connector.name}</span>
@@ -94,14 +94,14 @@ export function WalletButton() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => (isOpen ? close() : open())}
-        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border-low bg-card px-3 py-2 text-xs font-medium transition hover:bg-cream"
+        className="flex cursor-pointer items-center gap-2 rounded-md border border-border-low bg-card px-3 py-2 text-xs font-medium transition hover:bg-cream"
       >
         <span className="h-2 w-2 rounded-full bg-green-500" />
         <span className="font-mono">{ellipsify(address!, 4)}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-border-low bg-card p-4 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-md border border-border-low bg-card p-4 shadow-lg">
           <div className="mb-3">
             <p className="text-xs text-muted">Balance</p>
             <p className="text-lg font-bold tabular-nums">
@@ -133,12 +133,12 @@ export function WalletButton() {
             </a>
           </div>
 
-          <button
-            onClick={() => {
-              disconnect();
-              close();
-            }}
-            className="mt-2 w-full cursor-pointer rounded-lg border border-border-low bg-card px-3 py-2 text-xs font-medium text-destructive transition hover:bg-destructive/10"
+            <button
+              onClick={() => {
+                disconnect();
+                close();
+              }}
+            className="mt-2 w-full cursor-pointer rounded-md border border-border-low bg-card px-3 py-2 text-xs font-medium text-destructive transition hover:bg-destructive/10"
           >
             Disconnect
           </button>

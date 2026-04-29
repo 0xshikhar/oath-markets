@@ -29,12 +29,12 @@ export function SiteFooter() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-full border border-oath-border bg-oath-surface/60 px-4 py-2 transition hover:border-oath-gold/40 hover:text-foreground"
+              className="rounded-md border border-oath-border bg-oath-surface/60 px-4 py-2 transition hover:border-oath-gold/40 hover:text-foreground"
             >
               {link.label}
             </Link>
           ))}
-          <span className="rounded-full border border-oath-border bg-oath-gold/10 px-4 py-2 text-oath-gold">
+          <span className="rounded-md border border-oath-border bg-oath-gold/10 px-4 py-2 text-oath-gold">
             Built on Solana
           </span>
         </div>
