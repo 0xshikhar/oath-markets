@@ -19,7 +19,7 @@ export default async function CommitmentPage({ params }: CommitmentPageProps) {
       title="Public commitment streak page."
       description="This is the viral surface: goal, stake, believers, proof feed, and coach responses all in one place."
       actions={
-        <Button asChild variant="outline" className="rounded-full border-oath-border bg-background/40">
+        <Button asChild variant="outline" className="rounded-md border-oath-border bg-background/40">
           <Link href="/explore">Back to explore</Link>
         </Button>
       }

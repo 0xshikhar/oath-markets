@@ -54,7 +54,7 @@ export default async function Home() {
                 <Button
                   asChild
                   size="lg"
-                  className="rounded-full bg-oath-gold px-6 text-black hover:bg-oath-gold/90"
+                  className="rounded-md bg-oath-gold px-6 text-black hover:bg-oath-gold/90"
                 >
                   <Link href="/create">Create an oath</Link>
                 </Button>
@@ -62,7 +62,7 @@ export default async function Home() {
                   asChild
                   variant="outline"
                   size="lg"
-                  className="rounded-full border-oath-border bg-oath-surface/70 px-6 text-foreground hover:bg-oath-surface"
+                  className="rounded-md border-oath-border bg-oath-surface/70 px-6 text-foreground hover:bg-oath-surface"
                 >
                   <Link href="/explore">Browse live commitments</Link>
                 </Button>
@@ -192,7 +192,7 @@ export default async function Home() {
               <Button
                 asChild
                 variant="ghost"
-                className="rounded-full text-oath-gold hover:bg-oath-gold/10 hover:text-oath-gold"
+                className="rounded-md text-oath-gold hover:bg-oath-gold/10 hover:text-oath-gold"
               >
                 <Link href="/explore">See all oaths</Link>
               </Button>
@@ -280,14 +280,14 @@ export default async function Home() {
                 <div className="flex flex-wrap gap-3 lg:justify-end">
                   <Button
                     asChild
-                    className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90"
+                    className="rounded-md bg-oath-gold text-black hover:bg-oath-gold/90"
                   >
                     <Link href="/explore">Watch the feed</Link>
                   </Button>
                   <Button
                     asChild
                     variant="outline"
-                    className="rounded-full border-oath-border bg-background/40"
+                    className="rounded-md border-oath-border bg-background/40"
                   >
                     <Link href="/create">Make your own oath</Link>
                   </Button>

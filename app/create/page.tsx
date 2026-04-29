@@ -13,7 +13,7 @@ export default function CreatePage() {
         <Button
           asChild
           variant="outline"
-          className="rounded-full border-oath-border bg-background/40"
+          className="rounded-md border-oath-border bg-background/40"
         >
           <Link href="/explore">See live oaths</Link>
         </Button>

@@ -29,7 +29,7 @@ export function CommitmentCard({ commitment, compact = false }: CommitmentCardPr
             {commitment.category}
           </Badge>
           <span
-            className={`rounded-full border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em] ${
+            className={`rounded-md border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em] ${
               statusTone[commitment.status] ?? statusTone.ACTIVE
             }`}
           >
@@ -71,7 +71,7 @@ export function CommitmentCard({ commitment, compact = false }: CommitmentCardPr
         <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
           Day {commitment.proofCount} of {commitment.totalDays}
         </p>
-        <Button asChild size="sm" className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90">
+        <Button asChild size="sm" className="rounded-md bg-oath-gold text-black hover:bg-oath-gold/90">
           <Link href={commitment.publicUrl}>View oath</Link>
         </Button>
       </CardFooter>
