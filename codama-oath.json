@@ -1,0 +1,11 @@
+{
+  "idl": "./anchor/target/idl/oath.json",
+  "scripts": {
+    "js": [
+      {
+        "from": "@codama/renderers-js",
+        "args": ["./lib/generated/oath"]
+      }
+    ]
+  }
+}

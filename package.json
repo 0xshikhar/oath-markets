@@ -6,6 +6,7 @@
     "build": "next build",
     "ci": "npm run build && npm run lint && npm run format:check",
     "codama:js": "codama run js",
+    "codama:oath": "codama -c codama-oath.json run js",
     "dev": "next dev",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
@@ -13,7 +14,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint",
     "prisma:generate": "prisma generate",
-    "setup": "npm run anchor-build && npm run codama:js",
+    "setup": "npm run anchor-build && npm run codama:oath",
     "start": "next start"
   },
   "description": "Next.js, Tailwind, @solana/kit, Anchor vault program",
