@@ -594,7 +594,11 @@ async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
   }
 }
 
-async function loadDbCommitment(slug: string): Promise<CommitmentDetail | null> {
+async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null> {
+  if (!slug) {
+    return null;
+  }
+
   if (!hasDatabaseUrl) {
     const fallback =
       sampleCommitments.find((commitment) => commitment.slug === slug) ??
@@ -960,16 +964,21 @@ export async function getExploreCommitments(limit = 12) {
   return sortFeaturedCommitments(commitments).slice(0, limit);
 }
 
-export async function getCommitmentBySlug(slug: string) {
+export async function getCommitmentBySlug(slug?: string) {
   const commitment = await loadDbCommitment(slug);
   if (commitment) return commitment;
 
   return mapCommitmentDetail(sampleCommitments[0]);
 }
 
-export async function getProfileByWallet(identifier: string) {
+export async function getProfileByWallet(identifier?: string) {
   const profiles = await loadDbProfiles();
-  const normalized = identifier.toLowerCase();
+  const normalized = identifier?.trim().toLowerCase();
+
+  if (!normalized) {
+    return profiles[0];
+  }
+
   const profile = profiles.find(
     (entry) =>
       entry.walletAddress.toLowerCase() === normalized ||
