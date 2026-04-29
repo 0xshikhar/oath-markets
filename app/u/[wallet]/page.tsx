@@ -5,13 +5,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 type ProfilePageProps = {
-  params: {
+  params: Promise<{
     wallet: string;
-  };
+  }>;
 };
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
-  const profile = await getProfileByWallet(params.wallet);
+  const { wallet } = await params;
+  const profile = await getProfileByWallet(wallet);
 
   return (
     <PublicPageShell

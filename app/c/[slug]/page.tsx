@@ -5,13 +5,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 type CommitmentPageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 export default async function CommitmentPage({ params }: CommitmentPageProps) {
-  const commitment = await getCommitmentBySlug(params.slug);
+  const { slug } = await params;
+  const commitment = await getCommitmentBySlug(slug);
 
   return (
     <PublicPageShell
