@@ -6,6 +6,7 @@ skip-lint = false
 
 [programs.devnet]
 vault = "HfYFrtxtb1N4WM5ZbUW1vD3ALc29JY5mTvaA6YEZNXx4"
+oath = "CHyHVL8HzWw3VaZarPUuU2DNf5xJm3CkrrWz6GgYstBJ"
 
 [registry]
 url = "https://api.apr.dev"
