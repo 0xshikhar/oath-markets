@@ -4,8 +4,32 @@ import { getExploreCommitments } from "@/lib/oath-data";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default async function ExplorePage() {
-  const commitments = await getExploreCommitments(9);
+type ExplorePageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function readQueryValue(
+  value: string | string[] | undefined,
+  fallback = ""
+) {
+  if (Array.isArray(value)) return value[0] ?? fallback;
+  return value ?? fallback;
+}
+
+export default async function ExplorePage({ searchParams }: ExplorePageProps) {
+  const query = (await searchParams) ?? {};
+  const category = readQueryValue(query.category, "ALL");
+  const sort = readQueryValue(query.sort, "believers");
+  const search = readQueryValue(query.search, "");
+
+  const commitments = await getExploreCommitments({
+    category,
+    sort: sort as "believers" | "recent" | "ending",
+    search,
+    limit: 9,
+  });
+  const allCommitments = await getExploreCommitments({ limit: 50 });
+  const categories = ["ALL", ...new Set(allCommitments.map((item) => item.category))];
 
   return (
     <PublicPageShell
@@ -21,7 +45,14 @@ export default async function ExplorePage() {
         </Button>
       }
     >
-      <ExploreClient commitments={commitments} />
+      <ExploreClient
+        key={`${category}:${sort}:${search}`}
+        commitments={commitments}
+        categories={categories}
+        initialCategory={category}
+        initialSort={sort as "believers" | "recent" | "ending"}
+        initialSearch={search}
+      />
     </PublicPageShell>
   );
 }

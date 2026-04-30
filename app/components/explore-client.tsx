@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,10 @@ import type { CommitmentSummary } from "@/lib/oath-data";
 
 type ExploreClientProps = {
   commitments: CommitmentSummary[];
+  categories: string[];
+  initialCategory: string;
+  initialSort: (typeof sortOptions)[number]["value"];
+  initialSearch: string;
 };
 
 const sortOptions = [
@@ -26,15 +31,46 @@ const sortOptions = [
   { value: "ending", label: "Ending Soon" },
 ] as const;
 
-export function ExploreClient({ commitments }: ExploreClientProps) {
-  const [category, setCategory] = useState("ALL");
-  const [sort, setSort] = useState<(typeof sortOptions)[number]["value"]>("believers");
-  const [search, setSearch] = useState("");
-
-  const categories = useMemo(
-    () => ["ALL", ...new Set(commitments.map((commitment) => commitment.category))],
-    [commitments]
+export function ExploreClient({
+  commitments,
+  categories,
+  initialCategory,
+  initialSort,
+  initialSearch,
+}: ExploreClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [category, setCategory] = useState(initialCategory);
+  const [sort, setSort] = useState<(typeof sortOptions)[number]["value"]>(
+    initialSort
   );
+  const [search, setSearch] = useState(initialSearch);
+
+  const categoryOptions = useMemo(() => categories, [categories]);
+
+  const pushFilters = (next: {
+    category?: string;
+    sort?: (typeof sortOptions)[number]["value"];
+    search?: string;
+  }) => {
+    const params = new URLSearchParams();
+    const nextCategory = next.category ?? category;
+    const nextSort = next.sort ?? sort;
+    const nextSearch = next.search ?? search;
+
+    if (nextCategory && nextCategory !== "ALL") {
+      params.set("category", nextCategory);
+    }
+    if (nextSort && nextSort !== "believers") {
+      params.set("sort", nextSort);
+    }
+    if (nextSearch.trim().length > 0) {
+      params.set("search", nextSearch.trim());
+    }
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
   const filtered = useMemo(() => {
     const searchValue = search.trim().toLowerCase();
@@ -91,11 +127,22 @@ export function ExploreClient({ commitments }: ExploreClientProps) {
             <div className="grid gap-3 lg:grid-cols-[1.4fr_220px]">
               <Input
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setSearch(value);
+                  pushFilters({ search: value });
+                }}
                 placeholder="Search by goal, maker, or proof type"
                 className="rounded-md border-oath-border bg-background/50"
               />
-              <Select value={sort} onValueChange={(value) => setSort(value as typeof sort)}>
+              <Select
+                value={sort}
+                onValueChange={(value) => {
+                  const nextSort = value as (typeof sortOptions)[number]["value"];
+                  setSort(nextSort);
+                  pushFilters({ sort: nextSort });
+                }}
+              >
                 <SelectTrigger className="rounded-md border-oath-border bg-background/50">
                   <SelectValue placeholder="Sort commitments" />
                 </SelectTrigger>
@@ -110,7 +157,7 @@ export function ExploreClient({ commitments }: ExploreClientProps) {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {categories.map((item) => {
+              {categoryOptions.map((item) => {
                 const active = item === category;
                 return (
                   <Button
@@ -122,7 +169,10 @@ export function ExploreClient({ commitments }: ExploreClientProps) {
                         ? "rounded-md border-oath-gold bg-oath-gold/10 text-oath-gold hover:bg-oath-gold/15"
                         : "rounded-md border-oath-border bg-background/40 text-muted-foreground hover:bg-background/60 hover:text-foreground"
                     }
-                    onClick={() => setCategory(item)}
+                    onClick={() => {
+                      setCategory(item);
+                      pushFilters({ category: item });
+                    }}
                   >
                     {item}
                   </Button>
