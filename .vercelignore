@@ -1,0 +1,5 @@
+anchor/
+.git/
+node_modules/
+*.log
+.DS_Storev
