@@ -520,6 +520,50 @@ function sortFeaturedCommitments(commitments: CommitmentSummary[]) {
   });
 }
 
+type ExploreSort = "believers" | "recent" | "ending";
+
+type ExploreCommitmentFilters = {
+  category?: string;
+  search?: string;
+  sort?: ExploreSort;
+  limit?: number;
+};
+
+function filterExploreCommitments(
+  commitments: CommitmentSummary[],
+  filters: ExploreCommitmentFilters = {}
+) {
+  const category = filters.category?.trim().toUpperCase() ?? "ALL";
+  const search = filters.search?.trim().toLowerCase() ?? "";
+  const sort = filters.sort ?? "believers";
+
+  const filtered = commitments.filter((commitment) => {
+    const matchesCategory = category === "ALL" || commitment.category === category;
+    const matchesSearch =
+      search.length === 0 ||
+      commitment.title.toLowerCase().includes(search) ||
+      commitment.description.toLowerCase().includes(search) ||
+      commitment.makerName.toLowerCase().includes(search) ||
+      commitment.makerHandle.toLowerCase().includes(search) ||
+      commitment.proofType.toLowerCase().includes(search);
+
+    return matchesCategory && matchesSearch;
+  });
+
+  if (sort === "recent") {
+    return [...filtered].sort(
+      (a, b) =>
+        new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime()
+    );
+  }
+
+  if (sort === "ending") {
+    return [...filtered].sort((a, b) => a.daysRemaining - b.daysRemaining);
+  }
+
+  return sortFeaturedCommitments(filtered);
+}
+
 async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
   if (!hasDatabaseUrl) {
     return sampleCommitments.map(mapCommitment).slice(0, limit);
@@ -959,9 +1003,12 @@ export async function getFeaturedCommitments(limit = 3) {
   return sortFeaturedCommitments(commitments).slice(0, limit);
 }
 
-export async function getExploreCommitments(limit = 12) {
-  const commitments = await loadDbCommitments(Math.max(limit, 6));
-  return sortFeaturedCommitments(commitments).slice(0, limit);
+export async function getExploreCommitments(
+  filters: ExploreCommitmentFilters = {}
+) {
+  const limit = filters.limit ?? 12;
+  const commitments = await loadDbCommitments(Math.max(limit, 50));
+  return filterExploreCommitments(commitments, filters).slice(0, limit);
 }
 
 export async function getCommitmentBySlug(slug?: string) {
@@ -992,7 +1039,7 @@ export async function getProfileByWallet(identifier?: string) {
 }
 
 export async function getDashboardSummary() {
-  const commitments = await getExploreCommitments(9);
+  const commitments = await getExploreCommitments({ limit: 9 });
   const active = commitments.filter((commitment) => commitment.status === "ACTIVE");
   const completed = commitments.filter((commitment) => commitment.status === "COMPLETED");
   const failed = commitments.filter((commitment) => commitment.status === "FAILED");

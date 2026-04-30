@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ChangeEvent, ReactNode } from "react";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,15 +26,73 @@ export function DashboardClient({ summary }: DashboardClientProps) {
     useState<CommitmentSummary | null>(null);
   const [proofText, setProofText] = useState("");
   const [publicNote, setPublicNote] = useState("");
+  const [proofImageFile, setProofImageFile] = useState<File | null>(null);
+  const [proofImageUrl, setProofImageUrl] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
 
   const walletAddress = wallet?.account.address;
 
+  const resetProofForm = () => {
+    setSelectedCommitment(null);
+    setProofText("");
+    setPublicNote("");
+    setProofImageFile(null);
+    setProofImageUrl(null);
+    setIsUploadingImage(false);
+  };
+
+  const uploadProofImage = async (file: File) => {
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload/proof", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = (await response.json()) as {
+        ok: boolean;
+        imageUrl?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.ok || !data.imageUrl) {
+        throw new Error(data.error ?? "Image upload failed");
+      }
+
+      setProofImageUrl(data.imageUrl);
+      toast.success("Image uploaded to Cloudinary.");
+    } catch (error) {
+      setProofImageFile(null);
+      setProofImageUrl(null);
+      toast.error(error instanceof Error ? error.message : "Image upload failed");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleProofImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setProofImageFile(file);
+    setProofImageUrl(null);
+
+    if (file) {
+      void uploadProofImage(file);
+    }
+  };
+
   const submitProof = () => {
     if (!selectedCommitment) return;
     startTransition(async () => {
       try {
+        if (proofImageFile && !proofImageUrl) {
+          throw new Error("Wait for the image upload to finish before submitting.");
+        }
+
         const response = await fetch("/api/proofs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -44,14 +102,13 @@ export function DashboardClient({ summary }: DashboardClientProps) {
             dayNumber: selectedCommitment.proofCount + 1,
             textContent: proofText,
             publicNote,
+            imageUrl: proofImageUrl,
           }),
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.error ?? "Proof failed");
         toast.success("Proof submitted.");
-        setSelectedCommitment(null);
-        setProofText("");
-        setPublicNote("");
+        resetProofForm();
         router.refresh();
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Proof failed");
@@ -127,7 +184,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
                 <Dialog
                   open={selectedCommitment?.slug === commitment.slug}
                   onOpenChange={(open) =>
-                    setSelectedCommitment(open ? commitment : null)
+                    open ? setSelectedCommitment(commitment) : resetProofForm()
                   }
                 >
                   <DialogTrigger asChild>
@@ -158,9 +215,42 @@ export function DashboardClient({ summary }: DashboardClientProps) {
                         placeholder="Optional public note"
                         className="border-oath-border bg-background/50"
                       />
+                      <div className="space-y-2 rounded-2xl border border-oath-border bg-background/40 p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">Photo proof</p>
+                            <p className="text-xs text-oath-muted-text">
+                              Upload an image and we store it in Cloudinary.
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="border-oath-border text-oath-muted-text">
+                            Optional
+                          </Badge>
+                        </div>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProofImageChange}
+                          className="border-oath-border bg-background/50 file:rounded-none file:border-0 file:bg-transparent file:text-xs file:font-medium file:text-foreground"
+                        />
+                        {isUploadingImage ? (
+                          <p className="text-xs text-oath-muted-text">Uploading image...</p>
+                        ) : proofImageUrl ? (
+                          <p className="text-xs text-oath-green">Image uploaded and ready to attach.</p>
+                        ) : proofImageFile ? (
+                          <p className="text-xs text-oath-muted-text">{proofImageFile.name}</p>
+                        ) : (
+                          <p className="text-xs text-oath-muted-text">No image selected.</p>
+                        )}
+                      </div>
                       <Button
                         onClick={submitProof}
-                        disabled={isPending || proofText.trim().length === 0 || !walletAddress}
+                        disabled={
+                          isPending ||
+                          isUploadingImage ||
+                          proofText.trim().length === 0 ||
+                          !walletAddress
+                        }
                         className="w-full rounded-full bg-oath-gold text-black hover:bg-oath-gold/90"
                       >
                         {isPending ? "Submitting..." : "Submit proof"}

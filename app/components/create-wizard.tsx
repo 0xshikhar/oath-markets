@@ -11,8 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import { useWallet } from "../lib/wallet/context";
 import type { CommitmentSummary } from "@/lib/oath-data";
+import {
+  SlashDestination,
+  findCommitmentAccountPda,
+  getCreateCommitmentInstructionAsync,
+} from "@/lib/generated/oath";
 
 const categories = [
   "FITNESS",
@@ -48,6 +54,23 @@ type WizardState = {
   worldIdVerified: boolean;
 };
 
+type CommitmentCreateRequest = {
+  walletAddress?: string;
+  title: string;
+  description: string;
+  category: WizardState["category"];
+  proofType: WizardState["proofType"];
+  stakeAmountSol: number;
+  durationDays: number;
+  visibility: WizardState["visibility"];
+  slashDestination: WizardState["slashDestination"];
+  timezone: string;
+  notifyTime: string;
+  worldIdVerified: boolean;
+  onchainAddress?: string;
+  onchainTxSig?: string;
+};
+
 const steps = [
   "Goal",
   "Duration",
@@ -75,7 +98,8 @@ const defaultState: WizardState = {
 
 export function CreateWizard() {
   const router = useRouter();
-  const { wallet } = useWallet();
+  const { wallet, signer } = useWallet();
+  const { send, isSending } = useSendTransaction();
   const [step, setStep] = useState(0);
   const [isPending, startTransition] = useTransition();
   const [state, setState] = useState<WizardState>(defaultState);
@@ -83,6 +107,7 @@ export function CreateWizard() {
     useState<CommitmentSummary | null>(null);
 
   const walletAddress = wallet?.account.address;
+  const isBusy = isPending || isSending;
   const progress = ((step + 1) / steps.length) * 100;
 
   const preview = useMemo(
@@ -107,23 +132,58 @@ export function CreateWizard() {
   const submit = () => {
     startTransition(async () => {
       try {
+        const payload: CommitmentCreateRequest = {
+          walletAddress,
+          title: state.title,
+          description: state.description,
+          category: state.category,
+          proofType: state.proofType,
+          stakeAmountSol: state.stakeAmountSol,
+          durationDays: state.durationDays,
+          visibility: state.visibility,
+          slashDestination: state.slashDestination,
+          timezone: state.timezone,
+          notifyTime: state.notifyTime,
+          worldIdVerified: state.worldIdVerified,
+        };
+
+        if (walletAddress && signer) {
+          const commitmentId = crypto.getRandomValues(new Uint8Array(32));
+          const totalDays = state.durationDays;
+          const requiredProofDays = state.durationDays;
+          const startTimestamp = Math.floor(Date.now() / 1000);
+          const endTimestamp = startTimestamp + totalDays * 24 * 60 * 60;
+          const stakeLamports = BigInt(Math.round(state.stakeAmountSol * 1_000_000_000));
+          const commitmentAccount = await findCommitmentAccountPda({
+            maker: walletAddress,
+            commitmentId,
+          });
+          const instruction = await getCreateCommitmentInstructionAsync({
+            maker: signer,
+            commitmentId,
+            totalDays,
+            requiredProofDays,
+            startTimestamp,
+            endTimestamp,
+            stakeLamports,
+            slashDestination:
+              {
+                BURN: SlashDestination.Burn,
+                DONATE: SlashDestination.Donate,
+                TREASURY: SlashDestination.Treasury,
+              }[state.slashDestination],
+            isPublic: state.visibility === "PUBLIC",
+          });
+          const signature = await send({ instructions: [instruction] });
+
+          payload.onchainAddress = String(commitmentAccount[0]);
+          payload.onchainTxSig = signature;
+        }
+
         const response = await fetch("/api/commitments", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            walletAddress,
-            title: state.title,
-            description: state.description,
-            category: state.category,
-            proofType: state.proofType,
-            stakeAmountSol: state.stakeAmountSol,
-            durationDays: state.durationDays,
-            visibility: state.visibility,
-            slashDestination: state.slashDestination,
-            timezone: state.timezone,
-            notifyTime: state.notifyTime,
-            worldIdVerified: state.worldIdVerified,
-          }),
+          body: JSON.stringify(payload),
         });
 
         const data = (await response.json()) as {
@@ -419,14 +479,14 @@ export function CreateWizard() {
               Next
             </Button>
           ) : (
-            <Button
-              type="button"
-              onClick={submit}
-              disabled={isPending}
-              className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90"
-            >
-              {isPending ? "Launching..." : "Deploy oath"}
-            </Button>
+                      <Button
+                        type="button"
+                        onClick={submit}
+                        disabled={isBusy}
+                        className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90"
+                      >
+                {isBusy ? "Launching..." : "Deploy oath"}
+                      </Button>
           )}
         </div>
       </div>
