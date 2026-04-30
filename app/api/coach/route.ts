@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { CoachTrigger, MessageRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 type CoachInput = {
@@ -7,6 +6,14 @@ type CoachInput = {
   walletAddress?: string;
   content?: string;
 };
+
+const CoachTrigger = {
+  DAILY_CHECKIN: "DAILY_CHECKIN",
+} as const;
+
+const MessageRole = {
+  USER: "USER",
+} as const;
 
 export async function POST(request: Request) {
   const body = (await request.json()) as CoachInput;
