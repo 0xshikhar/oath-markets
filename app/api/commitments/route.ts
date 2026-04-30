@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { CommitmentCategory, ProofType, SlashDest } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCommitmentBySlug, type CommitmentDetail } from "@/lib/oath-data";
 
@@ -18,7 +17,33 @@ type CommitmentCreateInput = {
   timezone?: string;
   notifyTime?: string;
   worldIdVerified?: boolean;
+  onchainAddress?: string;
+  onchainTxSig?: string;
 };
+
+const COMMITMENT_CATEGORY = {
+  FITNESS: "FITNESS",
+  LEARNING: "LEARNING",
+  CREATIVE: "CREATIVE",
+  WORK: "WORK",
+  HEALTH: "HEALTH",
+  FINANCIAL: "FINANCIAL",
+  CUSTOM: "CUSTOM",
+} as const;
+
+const PROOF_TYPE = {
+  TEXT: "TEXT",
+  PHOTO: "PHOTO",
+  LINK: "LINK",
+  GITHUB_COMMIT: "GITHUB_COMMIT",
+  CUSTOM: "CUSTOM",
+} as const;
+
+const SLASH_DEST = {
+  BURN: "BURN",
+  DONATE: "DONATE",
+  TREASURY: "TREASURY",
+} as const;
 
 function slugify(value: string) {
   return value
@@ -110,10 +135,10 @@ export async function POST(request: Request) {
       slug,
       title,
       description: payload.description?.trim() || null,
-      category: (payload.category ?? "CUSTOM") as CommitmentCategory,
-      proofType: (payload.proofType ?? "TEXT") as ProofType,
+      category: (payload.category ?? "CUSTOM") as (typeof COMMITMENT_CATEGORY)[keyof typeof COMMITMENT_CATEGORY],
+      proofType: (payload.proofType ?? "TEXT") as (typeof PROOF_TYPE)[keyof typeof PROOF_TYPE],
       stakeAmountLamports,
-      slashDestination: (payload.slashDestination ?? "TREASURY") as SlashDest,
+      slashDestination: (payload.slashDestination ?? "TREASURY") as (typeof SLASH_DEST)[keyof typeof SLASH_DEST],
       startDate,
       endDate,
       totalDays: durationDays,
@@ -122,6 +147,8 @@ export async function POST(request: Request) {
       isPublic: payload.visibility !== "PRIVATE",
       makerId: user.id,
       proofCount: 0,
+      onchainAddress: payload.onchainAddress?.trim() || null,
+      onchainTxSig: payload.onchainTxSig?.trim() || null,
     },
   });
 
