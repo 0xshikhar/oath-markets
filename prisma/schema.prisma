@@ -32,6 +32,7 @@ model User {
 model Commitment {
   id                  String             @id @default(cuid())
   onchainAddress      String?            @unique
+  onchainTxSig        String?
   slug                String             @unique
   title               String
   description         String?
