@@ -16,6 +16,7 @@ type UserRecord = {
 
 type CommitmentRecord = {
   slug: string;
+  onchainAddress?: string | null;
   title: string;
   description: string | null;
   category: string;
@@ -60,6 +61,7 @@ type CoachMessageRecord = {
 
 type DbCommitmentSummaryRecord = {
   slug: string;
+  onchainAddress: string | null;
   title: string;
   description: string | null;
   category: string;
@@ -114,6 +116,7 @@ type DbUserProfileRecord = UserRecord & {
 
 export type CommitmentSummary = {
   slug: string;
+  onchainAddress: string | null;
   title: string;
   description: string;
   category: string;
@@ -454,6 +457,7 @@ function mapCommitment(commitment: CommitmentRecord): CommitmentSummary {
 
   return {
     slug: commitment.slug,
+    onchainAddress: commitment.onchainAddress ?? null,
     title: commitment.title,
     description: commitment.description ?? "",
     category: commitment.category,
@@ -576,6 +580,7 @@ async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
       take: limit,
       select: {
         slug: true,
+        onchainAddress: true,
         title: true,
         description: true,
         category: true,
@@ -611,6 +616,7 @@ async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
     return commitments.map((record: DbCommitmentSummaryRecord) =>
       mapCommitment({
         slug: record.slug,
+        onchainAddress: record.onchainAddress,
         title: record.title,
         description: record.description,
         category: record.category,
@@ -655,6 +661,7 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
       where: { slug },
       select: {
         slug: true,
+        onchainAddress: true,
         title: true,
         description: true,
         category: true,
@@ -722,6 +729,7 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
 
     return mapCommitmentDetail({
       slug: record.slug,
+      onchainAddress: record.onchainAddress,
       title: record.title,
       description: record.description,
       category: record.category,
