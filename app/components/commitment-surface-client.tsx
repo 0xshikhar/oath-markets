@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import type { Address } from "@solana/kit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  findBelieverRecordPda,
+  findReputationPda,
+  getCoStakeBeliefInstructionAsync,
+} from "@/lib/generated/oath";
+import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import { useWallet } from "../lib/wallet/context";
 import type { CommitmentDetail } from "@/lib/oath-data";
 
@@ -19,8 +26,9 @@ type CommitmentSurfaceClientProps = {
 };
 
 export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientProps) {
-  const { wallet } = useWallet();
+  const { wallet, signer } = useWallet();
   const router = useRouter();
+  const { send } = useSendTransaction();
   const [beliefOpen, setBeliefOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [beliefAmount, setBeliefAmount] = useState("0.1");
@@ -32,6 +40,31 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
   const submitBelief = async () => {
     try {
       setIsBelieving(true);
+      let onchainTxSig: string | undefined;
+      let onchainAddress: string | undefined;
+
+      if (walletAddress && signer && commitment.onchainAddress) {
+        const commitmentAccount = commitment.onchainAddress as Address;
+        const maker = commitment.makerWalletAddress as Address;
+        const believerRecord = await findBelieverRecordPda({
+          commitmentAccount,
+          believerWallet: walletAddress,
+        });
+        const reputation = await findReputationPda({
+          maker,
+        });
+        const instruction = await getCoStakeBeliefInstructionAsync({
+          believerWallet: signer,
+          commitmentAccount,
+          believerRecord: believerRecord[0],
+          reputation: reputation[0],
+          stakeLamports: BigInt(Math.round(Number(beliefAmount || 0.1) * 1_000_000_000)),
+        });
+
+        onchainTxSig = await send({ instructions: [instruction] });
+        onchainAddress = believerRecord[0];
+      }
+
       const response = await fetch("/api/beliefs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -39,11 +72,13 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
           commitmentSlug: commitment.slug,
           walletAddress,
           stakeAmountSol: Number(beliefAmount || 0.1),
+          onchainAddress,
+          onchainTxSig,
         }),
       });
       const data = await response.json();
       if (!response.ok || !data.ok) throw new Error(data.error ?? "Belief failed");
-      toast.success("Belief staked.");
+      toast.success(onchainTxSig ? "Belief staked on-chain." : "Belief staked.");
       setBeliefOpen(false);
       router.refresh();
     } catch (error) {
