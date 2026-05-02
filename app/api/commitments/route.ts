@@ -21,29 +21,23 @@ type CommitmentCreateInput = {
   onchainTxSig?: string;
 };
 
-const COMMITMENT_CATEGORY = {
-  FITNESS: "FITNESS",
-  LEARNING: "LEARNING",
-  CREATIVE: "CREATIVE",
-  WORK: "WORK",
-  HEALTH: "HEALTH",
-  FINANCIAL: "FINANCIAL",
-  CUSTOM: "CUSTOM",
-} as const;
+type CommitmentCategory =
+  | "FITNESS"
+  | "LEARNING"
+  | "CREATIVE"
+  | "WORK"
+  | "HEALTH"
+  | "FINANCIAL"
+  | "CUSTOM";
 
-const PROOF_TYPE = {
-  TEXT: "TEXT",
-  PHOTO: "PHOTO",
-  LINK: "LINK",
-  GITHUB_COMMIT: "GITHUB_COMMIT",
-  CUSTOM: "CUSTOM",
-} as const;
+type ProofType =
+  | "TEXT"
+  | "PHOTO"
+  | "LINK"
+  | "GITHUB_COMMIT"
+  | "CUSTOM";
 
-const SLASH_DEST = {
-  BURN: "BURN",
-  DONATE: "DONATE",
-  TREASURY: "TREASURY",
-} as const;
+type SlashDestination = "BURN" | "DONATE" | "TREASURY";
 
 function slugify(value: string) {
   return value
@@ -136,10 +130,10 @@ export async function POST(request: Request) {
       slug,
       title,
       description: payload.description?.trim() || null,
-      category: (payload.category ?? "CUSTOM") as (typeof COMMITMENT_CATEGORY)[keyof typeof COMMITMENT_CATEGORY],
-      proofType: (payload.proofType ?? "TEXT") as (typeof PROOF_TYPE)[keyof typeof PROOF_TYPE],
+      category: (payload.category ?? "CUSTOM") as CommitmentCategory,
+      proofType: (payload.proofType ?? "TEXT") as ProofType,
       stakeAmountLamports,
-      slashDestination: (payload.slashDestination ?? "TREASURY") as (typeof SLASH_DEST)[keyof typeof SLASH_DEST],
+      slashDestination: (payload.slashDestination ?? "TREASURY") as SlashDestination,
       startDate,
       endDate,
       totalDays: durationDays,
