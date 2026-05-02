@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import type { Address } from "@solana/kit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { buildProofContentHash, bytesToHex } from "@/lib/proof-hash";
+import {
+  getSubmitProofInstructionAsync,
+} from "@/lib/generated/oath";
 import { useWallet } from "../lib/wallet/context";
+import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import type { DashboardView, CommitmentSummary } from "@/lib/oath-data";
 
 type DashboardClientProps = {
@@ -20,7 +26,8 @@ type DashboardClientProps = {
 };
 
 export function DashboardClient({ summary }: DashboardClientProps) {
-  const { wallet } = useWallet();
+  const { wallet, signer } = useWallet();
+  const { send } = useSendTransaction();
   const router = useRouter();
   const [selectedCommitment, setSelectedCommitment] =
     useState<CommitmentSummary | null>(null);
@@ -93,21 +100,45 @@ export function DashboardClient({ summary }: DashboardClientProps) {
           throw new Error("Wait for the image upload to finish before submitting.");
         }
 
+        const dayNumber = selectedCommitment.proofCount + 1;
+        const textContent = proofText.trim();
+        const contentHash = await buildProofContentHash({
+          commitmentSlug: selectedCommitment.slug,
+          dayNumber,
+          textContent,
+          imageUrl: proofImageUrl,
+          publicNote: publicNote.trim() || null,
+        });
+        let onchainTxSig: string | undefined;
+
+        if (walletAddress && signer && selectedCommitment.onchainAddress) {
+          const commitmentAccount = selectedCommitment.onchainAddress as Address;
+          const instruction = await getSubmitProofInstructionAsync({
+            maker: signer,
+            commitmentAccount,
+            dayNumber,
+            contentHash,
+          });
+          onchainTxSig = await send({ instructions: [instruction] });
+        }
+
         const response = await fetch("/api/proofs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             commitmentSlug: selectedCommitment.slug,
             walletAddress,
-            dayNumber: selectedCommitment.proofCount + 1,
-            textContent: proofText,
-            publicNote,
+            dayNumber,
+            textContent,
+            publicNote: publicNote.trim(),
             imageUrl: proofImageUrl,
+            contentHash: bytesToHex(contentHash),
+            onchainTxSig,
           }),
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.error ?? "Proof failed");
-        toast.success("Proof submitted.");
+        toast.success(onchainTxSig ? "Proof submitted on-chain." : "Proof submitted.");
         resetProofForm();
         router.refresh();
       } catch (error) {
