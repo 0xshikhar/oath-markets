@@ -10,6 +10,8 @@ type ProofInput = {
   imageUrl?: string;
   linkUrl?: string;
   publicNote?: string;
+  contentHash?: string;
+  onchainTxSig?: string;
 };
 
 export async function POST(request: Request) {
@@ -43,6 +45,8 @@ export async function POST(request: Request) {
       imageUrl: body.imageUrl?.trim() || null,
       linkUrl: body.linkUrl?.trim() || null,
       publicNote: body.publicNote?.trim() || null,
+      contentHash: body.contentHash?.trim() || null,
+      onchainTxSig: body.onchainTxSig?.trim() || null,
     },
   });
 

@@ -68,6 +68,7 @@ function makeFallbackCommitment(input: CommitmentCreateInput, slug: string): Com
     makerHandle: input.walletAddress ? `@${input.walletAddress.slice(0, 6)}` : "@maker",
     makerWalletAddress: input.walletAddress ?? "demo-wallet",
     makerVerified: Boolean(input.worldIdVerified),
+    onchainAddress: input.onchainAddress ?? null,
     stakeLabel: `${stakeAmountSol} SOL`,
     believerCount: 0,
     proofCount: 0,

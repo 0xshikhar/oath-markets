@@ -6,6 +6,8 @@ type BeliefInput = {
   commitmentSlug?: string;
   walletAddress?: string;
   stakeAmountSol?: number;
+  onchainAddress?: string;
+  onchainTxSig?: string;
 };
 
 export async function POST(request: Request) {
@@ -48,7 +50,8 @@ export async function POST(request: Request) {
       commitmentId: commitment.id,
       believerId: user.id,
       stakeAmountLamports: BigInt(Math.round((body.stakeAmountSol ?? 0.1) * 1_000_000_000)),
-      onchainTxSig: `demo-${Date.now()}`,
+      onchainAddress: body.onchainAddress?.trim() || null,
+      onchainTxSig: body.onchainTxSig?.trim() || `demo-${Date.now()}`,
     },
   });
 
