@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sync-onchain",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/resolve-commitments",
+      "schedule": "5 0 * * *"
+    }
+  ]
+}
