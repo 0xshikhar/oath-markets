@@ -1,6 +1,7 @@
 import { ExploreClient } from "../components/explore-client";
 import { PublicPageShell } from "../components/public-page-shell";
 import { getExploreCommitments } from "@/lib/oath-data";
+import { getHotCommitments } from "@/lib/social-data";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -29,6 +30,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
     limit: 9,
   });
   const allCommitments = await getExploreCommitments({ limit: 50 });
+  const hotCommitments = await getHotCommitments(3);
   const categories = ["ALL", ...new Set(allCommitments.map((item) => item.category))];
 
   return (
@@ -48,6 +50,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
       <ExploreClient
         key={`${category}:${sort}:${search}`}
         commitments={commitments}
+        hotCommitments={hotCommitments}
         categories={categories}
         initialCategory={category}
         initialSort={sort as "believers" | "recent" | "ending"}

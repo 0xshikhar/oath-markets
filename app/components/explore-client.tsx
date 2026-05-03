@@ -16,9 +16,11 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import type { CommitmentSummary } from "@/lib/oath-data";
+import type { HotCommitment } from "@/lib/social-data";
 
 type ExploreClientProps = {
   commitments: CommitmentSummary[];
+  hotCommitments: HotCommitment[];
   categories: string[];
   initialCategory: string;
   initialSort: (typeof sortOptions)[number]["value"];
@@ -33,6 +35,7 @@ const sortOptions = [
 
 export function ExploreClient({
   commitments,
+  hotCommitments,
   categories,
   initialCategory,
   initialSort,
@@ -225,6 +228,37 @@ export function ExploreClient({
             glance. The goal, stake, believers, and proof cadence should be
             obvious without reading a long block of copy.
           </p>
+          <div className="space-y-3 rounded-2xl border border-oath-border bg-background/30 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
+                Hot right now
+              </p>
+              <span className="text-xs text-oath-muted-text">24h reactions</span>
+            </div>
+            <div className="space-y-3">
+              {hotCommitments.map((commitment) => (
+                <Link
+                  key={commitment.slug}
+                  href={commitment.publicUrl}
+                  className="block rounded-xl border border-oath-border bg-background/40 p-3 transition hover:border-oath-gold/30 hover:bg-oath-gold/5"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-foreground">
+                        {commitment.title}
+                      </p>
+                      <p className="text-xs text-oath-muted-text">
+                        {commitment.makerHandle} · {commitment.believerCount} believers
+                      </p>
+                    </div>
+                    <span className="rounded-full border border-oath-border px-2 py-1 text-xs text-oath-gold">
+                      {commitment.reactionCount24h}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
           <div className="space-y-2 rounded-md border border-oath-border bg-background/40 p-4">
             <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
               Current filter
