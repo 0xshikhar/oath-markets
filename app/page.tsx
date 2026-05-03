@@ -278,12 +278,12 @@ export default async function Home() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3 lg:justify-end">
-                  <Button
-                    asChild
-                    className="rounded-md bg-oath-gold text-black hover:bg-oath-gold/90"
-                  >
-                    <Link href="/explore">Watch the feed</Link>
-                  </Button>
+                <Button
+                  asChild
+                  className="rounded-md bg-oath-gold text-black hover:bg-oath-gold/90"
+                >
+                  <Link href="/feed">Watch the feed</Link>
+                </Button>
                   <Button
                     asChild
                     variant="outline"
