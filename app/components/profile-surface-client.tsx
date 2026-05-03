@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ProfileView } from "@/lib/oath-data";
+import { FollowButton } from "./follow-button";
 import { CommitmentCard } from "./commitment-card";
 
 type ProfileSurfaceClientProps = {
@@ -36,6 +37,12 @@ export function ProfileSurfaceClient({ profile }: ProfileSurfaceClientProps) {
             ) : null}
           </div>
           <p className="max-w-2xl text-base leading-7 text-muted-foreground">{profile.bio}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <FollowButton targetWalletAddress={profile.walletAddress} />
+            <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
+              {profile.followerCount} followers · {profile.followingCount} following
+            </p>
+          </div>
         </CardHeader>
 
         <CardContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
