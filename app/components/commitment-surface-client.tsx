@@ -20,6 +20,7 @@ import {
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import { useWallet } from "../lib/wallet/context";
 import type { CommitmentDetail } from "@/lib/oath-data";
+import { ProofReactionStrip } from "./proof-reaction-strip";
 
 type CommitmentSurfaceClientProps = {
   commitment: CommitmentDetail;
@@ -265,6 +266,12 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
                       {proof.publicNote}
                     </p>
                   ) : null}
+                  <div className="mt-4">
+                    <ProofReactionStrip
+                      proofId={proof.id}
+                      initialCounts={proof.reactionCounts}
+                    />
+                  </div>
                 </div>
               ))
             ) : (

@@ -46,6 +46,7 @@ type ProofRecord = {
   linkUrl: string | null;
   publicNote: string | null;
   createdAt: Date;
+  reactionCounts?: ReactionCounts;
 };
 
 type CommentRecord = {
@@ -57,6 +58,14 @@ type CommentRecord = {
 type CoachMessageRecord = {
   content: string;
   createdAt: Date;
+};
+
+export type ReactionCounts = {
+  momentum: number;
+  streak: number;
+  watching: number;
+  doubt: number;
+  total: number;
 };
 
 type DbCommitmentSummaryRecord = {
@@ -80,12 +89,14 @@ type DbCommitmentSummaryRecord = {
 };
 
 type DbProofRecord = {
+  id: string;
   dayNumber: number;
   textContent: string | null;
   imageUrl: string | null;
   linkUrl: string | null;
   publicNote: string | null;
   createdAt: Date;
+  reactions: { type: string }[];
 };
 
 type DbCommentRecord = {
@@ -112,6 +123,10 @@ type DbCommitmentDetailRecord = DbCommitmentSummaryRecord & {
 type DbUserProfileRecord = UserRecord & {
   commitments: DbCommitmentSummaryRecord[];
   beliefs: { stakeAmountLamports: bigint }[];
+  _count: {
+    followers: number;
+    following: number;
+  };
 };
 
 export type CommitmentSummary = {
@@ -143,12 +158,14 @@ export type CommitmentDetail = CommitmentSummary & {
   completionRatioLabel: string;
   startDateLabel: string;
   proofSamples: Array<{
+    id: string;
     dayNumber: number;
     textContent: string;
     imageUrl: string | null;
     linkUrl: string | null;
     publicNote: string | null;
     createdAtLabel: string;
+    reactionCounts: ReactionCounts;
   }>;
   comments: Array<{
     authorName: string;
@@ -169,6 +186,8 @@ export type ProfileView = {
   verified: boolean;
   timezone: string;
   notifyTime: string;
+  followerCount: number;
+  followingCount: number;
   reputationScore: string;
   completedCount: number;
   activeCount: number;
@@ -428,6 +447,31 @@ function formatSol(lamports: bigint) {
   return decimals ? `${whole}.${decimals.slice(0, 2)}` : whole.toString();
 }
 
+function emptyReactionCounts(): ReactionCounts {
+  return {
+    momentum: 0,
+    streak: 0,
+    watching: 0,
+    doubt: 0,
+    total: 0,
+  };
+}
+
+function mapReactionCounts(reactions: { type: string }[]): ReactionCounts {
+  const counts = emptyReactionCounts();
+
+  for (const reaction of reactions) {
+    const type = reaction.type.toLowerCase();
+    if (type === "momentum") counts.momentum += 1;
+    if (type === "streak") counts.streak += 1;
+    if (type === "watching") counts.watching += 1;
+    if (type === "doubt") counts.doubt += 1;
+    counts.total += 1;
+  }
+
+  return counts;
+}
+
 function toHandle(user: UserRecord) {
   return user.username ? `@${user.username}` : ellipsify(user.walletAddress, 4);
 }
@@ -491,12 +535,14 @@ function mapCommitmentDetail(commitment: CommitmentRecord): CommitmentDetail {
     )}%`,
     startDateLabel: formatLongDateLabel(commitment.startDate),
     proofSamples: commitment.proofSamples.map((proof) => ({
+      id: `${commitment.slug}-${proof.dayNumber}`,
       dayNumber: proof.dayNumber,
       textContent: proof.textContent ?? "",
       imageUrl: proof.imageUrl,
       linkUrl: proof.linkUrl,
       publicNote: proof.publicNote,
       createdAtLabel: formatDateLabel(proof.createdAt),
+      reactionCounts: proof.reactionCounts ?? emptyReactionCounts(),
     })),
     comments: commitment.comments.map((comment) => ({
       authorName: comment.authorName,
@@ -690,12 +736,18 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
         proofs: {
           orderBy: { dayNumber: "desc" },
           select: {
+            id: true,
             dayNumber: true,
             textContent: true,
             imageUrl: true,
             linkUrl: true,
             publicNote: true,
             createdAt: true,
+            reactions: {
+              select: {
+                type: true,
+              },
+            },
           },
         },
         comments: {
@@ -722,7 +774,7 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
         beliefs: {
           select: { id: true },
         },
-      },
+      } as any,
     })) as DbCommitmentDetailRecord | null;
 
     if (!record) return null;
@@ -748,12 +800,14 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
       maker: record.maker,
       believerCount: record.beliefs.length,
       proofSamples: record.proofs.map((proof) => ({
+        id: proof.id,
         dayNumber: proof.dayNumber,
         textContent: proof.textContent,
         imageUrl: proof.imageUrl,
         linkUrl: proof.linkUrl,
         publicNote: proof.publicNote,
         createdAt: proof.createdAt,
+        reactionCounts: mapReactionCounts(proof.reactions),
       })),
       comments: record.comments.map((comment) => ({
         authorName:
@@ -796,6 +850,12 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
         worldIdVerified: true,
         notifyTime: true,
         timezone: true,
+        _count: {
+          select: {
+            followers: true,
+            following: true,
+          } as any,
+        } as any,
         commitments: {
           select: {
             slug: true,
@@ -825,7 +885,7 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
           },
         },
       },
-    })) as DbUserProfileRecord[];
+    })) as unknown as DbUserProfileRecord[];
 
     if (users.length === 0) {
       return sampleUsers.map((user) => {
@@ -874,6 +934,8 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
         verified: user.worldIdVerified,
         timezone: user.timezone,
         notifyTime: user.notifyTime,
+        followerCount: user._count.followers,
+        followingCount: user._count.following,
         reputationScore: formatCompactNumber(
           commitments.filter((commitment) => commitment.status === "COMPLETED")
             .length * 120 +
@@ -919,6 +981,8 @@ function mapProfileFromFallback(
     verified: user.worldIdVerified,
     timezone: user.timezone,
     notifyTime: user.notifyTime,
+    followerCount: 0,
+    followingCount: 0,
     reputationScore: formatCompactNumber(
       commitments.filter((commitment) => commitment.status === "COMPLETED")
         .length * 120 +
