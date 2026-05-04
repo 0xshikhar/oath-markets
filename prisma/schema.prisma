@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -27,6 +28,9 @@ model User {
   beliefs          Belief[]
   comments         Comment[]
   coachMessages    CoachMessage[]
+  followers        Follow[]      @relation("Followers")
+  following        Follow[]      @relation("Following")
+  reactions        Reaction[]
 }
 
 model Commitment {
@@ -76,6 +80,7 @@ model Proof {
   onchainTxSig  String?
   publicNote    String?
   createdAt     DateTime   @default(now())
+  reactions     Reaction[]
 
   @@unique([commitmentId, dayNumber])
   @@index([commitmentId])
@@ -121,6 +126,33 @@ model Comment {
   author        User       @relation(fields: [authorId], references: [id])
   content       String
   createdAt     DateTime   @default(now())
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("Following", fields: [followerId], references: [id])
+  followingId String
+  following   User     @relation("Followers", fields: [followingId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model Reaction {
+  id        String        @id @default(cuid())
+  proofId   String
+  proof     Proof         @relation(fields: [proofId], references: [id])
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  type      ReactionType
+  createdAt DateTime      @default(now())
+
+  @@unique([proofId, userId, type])
+  @@index([proofId])
+  @@index([userId])
 }
 
 enum CommitmentCategory {
@@ -172,4 +204,11 @@ enum CoachTrigger {
   MILESTONE
   COMPLETION
   FAILURE
+}
+
+enum ReactionType {
+  MOMENTUM
+  STREAK
+  WATCHING
+  DOUBT
 }
