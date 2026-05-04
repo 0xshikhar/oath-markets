@@ -5,43 +5,43 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --primary: #576500;
-  --primary-foreground: #ffffff;
+  --primary: #dfff00;
+  --primary-foreground: #131313;
   --muted: #f3f3f4;
   --muted-foreground: #454932;
   --card: #ffffff;
-  --card-foreground: #1a1c1c;
+  --card-foreground: #131313;
   --popover: #ffffff;
-  --popover-foreground: #1a1c1c;
+  --popover-foreground: #131313;
   --border: #e5e5e5;
   --border-low: #eeeeee;
-  --input: #f4f4f4;
+  --input: #f3f3f4;
   --accent: #eeeeee;
-  --accent-foreground: #1a1c1c;
+  --accent-foreground: #131313;
   --cream: #f9f9f9;
   --destructive: #ba1a1a;
   --destructive-foreground: #ffffff;
-  --ring: #576500;
+  --ring: #131313;
   --radius: 0.25rem;
   --secondary: #eeeeee;
-  --secondary-foreground: #1a1c1c;
+  --secondary-foreground: #131313;
   --background: #f9f9f9;
-  --foreground: #1a1c1c;
+  --foreground: #131313;
   --app-font-sans: var(--font-inter), "Inter", system-ui, sans-serif;
   --app-font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, monospace;
 
-  --oath-black: #1a1c1c;
+  --oath-black: #131313;
   --oath-surface: #ffffff;
   --oath-surface-dim: #dadada;
   --oath-surface-bright: #f9f9f9;
   --oath-border: #e5e5e5;
   --oath-muted: #c6c9ab;
-  --oath-gold: #576500;
-  --oath-gold-dim: #414c00;
-  --oath-green: #dfff00;
+  --oath-gold: #dfff00;
+  --oath-gold-dim: #b8d300;
+  --oath-green: #b8d300;
   --oath-red: #ba1a1a;
   --oath-blue: #6b6d6d;
-  --oath-text: #1a1c1c;
+  --oath-text: #131313;
   --oath-muted-text: #454932;
 
   --surface-container-lowest: #ffffff;
@@ -49,7 +49,7 @@
   --surface-container: #eeeeee;
   --surface-container-high: #e8e8e8;
   --surface-container-highest: #e2e2e2;
-  --on-surface: #1a1c1c;
+  --on-surface: #131313;
   --on-surface-variant: #454932;
   --inverse-surface: #2f3131;
   --inverse-on-surface: #f0f1f1;
@@ -57,7 +57,7 @@
   --outline-variant: #c6c9ab;
   --surface-tint: #576500;
   --primary-container: #dfff00;
-  --on-primary-container: #647400;
+  --on-primary-container: #131313;
   --inverse-primary: #b8d300;
   --secondary-container: #e5e2e1;
   --on-secondary-container: #656464;
@@ -79,7 +79,7 @@
   --on-tertiary-fixed-variant: #454747;
   --surface-variant: #e2e2e2;
 
-  --chart-1: #576500;
+  --chart-1: #dfff00;
   --chart-2: #767960;
   --chart-3: #c6c9ab;
   --chart-4: #e2e2e2;
@@ -95,40 +95,87 @@
 }
 
 .dark {
-  --background: #1a1c1c;
+  --background: #131313;
   --foreground: #f0f1f1;
-  --primary: #d2f000;
-  --primary-foreground: #191e00;
-  --muted: #2f3131;
+  --primary: #dfff00;
+  --primary-foreground: #131313;
+  --muted: #222424;
   --muted-foreground: #c6c9ab;
-  --card: #2f3131;
+  --card: #1c1e1e;
   --card-foreground: #f0f1f1;
-  --popover: #2f3131;
+  --popover: #1c1e1e;
   --popover-foreground: #f0f1f1;
-  --border: #454747;
-  --border-low: #2f3131;
-  --input: #2f3131;
-  --accent: #454747;
+  --border: #343738;
+  --border-low: #222424;
+  --input: #222424;
+  --accent: #343738;
   --accent-foreground: #f0f1f1;
-  --cream: #2f3131;
+  --cream: #1c1e1e;
   --destructive: #ffdad6;
   --destructive-foreground: #93000a;
-  --ring: #d2f000;
-  --secondary: #454747;
+  --ring: #dfff00;
+  --secondary: #343738;
   --secondary-foreground: #f0f1f1;
-  --chart-1: #d2f000;
-  --chart-2: #767960;
-  --chart-3: #454747;
-  --chart-4: #2f3131;
-  --chart-5: #1a1c1c;
-  --sidebar: #1a1c1c;
+  --oath-black: #f0f1f1;
+  --oath-surface: #131313;
+  --oath-surface-dim: #1c1e1e;
+  --oath-surface-bright: #222424;
+  --oath-border: #343738;
+  --oath-muted: #222424;
+  --oath-gold: #dfff00;
+  --oath-gold-dim: #b8d300;
+  --oath-green: #b8d300;
+  --oath-red: #ffdad6;
+  --oath-blue: #c6c9ab;
+  --oath-text: #f0f1f1;
+  --oath-muted-text: #c6c9ab;
+  --surface-container-lowest: #131313;
+  --surface-container-low: #1c1e1e;
+  --surface-container: #222424;
+  --surface-container-high: #2a2d2d;
+  --surface-container-highest: #343738;
+  --on-surface: #f0f1f1;
+  --on-surface-variant: #c6c9ab;
+  --inverse-surface: #f0f1f1;
+  --inverse-on-surface: #131313;
+  --outline: #767960;
+  --outline-variant: #343738;
+  --surface-tint: #dfff00;
+  --primary-container: #dfff00;
+  --on-primary-container: #131313;
+  --inverse-primary: #b8d300;
+  --secondary-container: #222424;
+  --on-secondary-container: #f0f1f1;
+  --tertiary-container: #1c1e1e;
+  --on-tertiary-container: #c6c9ab;
+  --error-container: #3f1715;
+  --on-error-container: #ffdad6;
+  --primary-fixed: #dfff00;
+  --primary-fixed-dim: #b8d300;
+  --on-primary-fixed: #131313;
+  --on-primary-fixed-variant: #414c00;
+  --secondary-fixed: #222424;
+  --secondary-fixed-dim: #1c1e1e;
+  --on-secondary-fixed: #f0f1f1;
+  --on-secondary-fixed-variant: #c6c9ab;
+  --tertiary-fixed: #1c1e1e;
+  --tertiary-fixed-dim: #222424;
+  --on-tertiary-fixed: #f0f1f1;
+  --on-tertiary-fixed-variant: #c6c9ab;
+  --surface-variant: #2a2d2d;
+  --chart-1: #dfff00;
+  --chart-2: #c6c9ab;
+  --chart-3: #343738;
+  --chart-4: #222424;
+  --chart-5: #131313;
+  --sidebar: #131313;
   --sidebar-foreground: #f0f1f1;
-  --sidebar-primary: #d2f000;
-  --sidebar-primary-foreground: #191e00;
-  --sidebar-accent: #2f3131;
+  --sidebar-primary: #dfff00;
+  --sidebar-primary-foreground: #131313;
+  --sidebar-accent: #222424;
   --sidebar-accent-foreground: #f0f1f1;
-  --sidebar-border: #454747;
-  --sidebar-ring: #d2f000;
+  --sidebar-border: #343738;
+  --sidebar-ring: #dfff00;
 }
 
 @theme inline {
@@ -202,11 +249,20 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent 18%);
+    background-image:
+      radial-gradient(circle at top left, rgba(223, 255, 0, 0.08), transparent 26%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.85), transparent 18%);
+    background-attachment: fixed;
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(circle at top left, rgba(223, 255, 0, 0.06), transparent 24%),
+      linear-gradient(180deg, rgba(19, 19, 19, 0.96), transparent 24%);
   }
 
   ::selection {
-    background: rgba(87, 101, 0, 0.22);
-    color: inherit;
+    background: rgba(223, 255, 0, 0.58);
+    color: #131313;
   }
 }
