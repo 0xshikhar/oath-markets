@@ -11,7 +11,7 @@ type CommitmentCardProps = {
 };
 
 const statusTone: Record<string, string> = {
-  ACTIVE: "border-oath-gold/30 bg-oath-gold/10 text-oath-gold",
+  ACTIVE: "border-oath-gold/40 bg-oath-gold/10 text-foreground",
   COMPLETED: "border-oath-green/30 bg-oath-green/10 text-oath-green",
   FAILED: "border-oath-red/30 bg-oath-red/10 text-oath-red",
   ABANDONED: "border-border bg-muted text-muted-foreground",
@@ -19,17 +19,17 @@ const statusTone: Record<string, string> = {
 
 export function CommitmentCard({ commitment, compact = false }: CommitmentCardProps) {
   return (
-    <Card className="group border-oath-border/70 bg-card/90 shadow-[0_20px_80px_-60px_rgba(0,0,0,0.85)] transition-transform duration-300 hover:-translate-y-1">
+    <Card className="group flex h-full flex-col overflow-hidden border-oath-border bg-card transition-transform duration-300 hover:-translate-y-0.5">
       <CardHeader className={compact ? "space-y-4 p-5" : "space-y-4 p-6"}>
         <div className="flex items-center justify-between gap-3">
           <Badge
             variant="outline"
-            className="border-oath-border bg-oath-surface/80 text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
+            className="border-oath-border bg-background text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
           >
             {commitment.category}
           </Badge>
           <span
-            className={`rounded-md border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em] ${
+            className={`rounded-[var(--radius)] border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em] ${
               statusTone[commitment.status] ?? statusTone.ACTIVE
             }`}
           >
@@ -42,7 +42,7 @@ export function CommitmentCard({ commitment, compact = false }: CommitmentCardPr
             <span className="font-medium text-foreground">{commitment.makerName}</span>
             <span className="text-oath-muted-text">{commitment.makerHandle}</span>
             {commitment.makerVerified ? (
-              <span className="rounded-full border border-oath-green/30 bg-oath-green/10 px-2 py-0.5 text-[0.65rem] font-medium text-oath-green">
+              <span className="rounded-[var(--radius)] border border-oath-green/30 bg-oath-green/10 px-2 py-0.5 text-[0.65rem] font-medium text-oath-green">
                 Verified
               </span>
             ) : null}
@@ -56,8 +56,8 @@ export function CommitmentCard({ commitment, compact = false }: CommitmentCardPr
         </div>
       </CardHeader>
 
-      <CardContent className={compact ? "space-y-4 px-5 pb-5" : "space-y-4 px-6 pb-6"}>
-        <Progress value={commitment.progressPercent} className="h-2 bg-oath-surface" />
+      <CardContent className={compact ? "flex flex-1 flex-col space-y-4 px-5 pb-5" : "flex flex-1 flex-col space-y-4 px-6 pb-6"}>
+        <Progress value={commitment.progressPercent} className="h-2" />
 
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <Metric label="Staked" value={commitment.stakeLabel} />
@@ -67,11 +67,11 @@ export function CommitmentCard({ commitment, compact = false }: CommitmentCardPr
         </div>
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between gap-3 border-t border-oath-border/60 px-6 py-4">
+      <CardFooter className="mt-auto flex items-center justify-between gap-3 border-t border-oath-border/60 px-6 py-4">
         <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
           Day {commitment.proofCount} of {commitment.totalDays}
         </p>
-        <Button asChild size="sm" className="rounded-md bg-oath-gold text-black hover:bg-oath-gold/90">
+        <Button asChild size="sm" className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
           <Link href={commitment.publicUrl}>View oath</Link>
         </Button>
       </CardFooter>
@@ -81,11 +81,13 @@ export function CommitmentCard({ commitment, compact = false }: CommitmentCardPr
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-oath-border bg-oath-surface/80 px-3 py-3">
+    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background px-3 py-3">
       <p className="text-[0.65rem] uppercase tracking-[0.2em] text-oath-muted-text">
         {label}
       </p>
-      <p className="mt-1 font-mono text-sm text-foreground">{value}</p>
+      <p className="mt-2 break-words font-mono text-sm leading-5 text-foreground">
+        {value}
+      </p>
     </div>
   );
 }

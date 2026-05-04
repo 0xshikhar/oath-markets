@@ -174,10 +174,10 @@ export function DashboardClient({ summary }: DashboardClientProps) {
 
   return (
     <section className="space-y-6">
-      <Card className="border-oath-border/70 bg-oath-surface/80">
+      <Card className="border-oath-border bg-card">
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div className="space-y-2">
-            <Badge className="bg-oath-gold/10 text-oath-gold hover:bg-oath-gold/20">
+            <Badge className="bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
               Dashboard
             </Badge>
             <CardTitle className="text-3xl tracking-[-0.03em]">Your oaths</CardTitle>
@@ -186,7 +186,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
               tracking will live.
             </p>
           </div>
-          <Button asChild className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90">
+          <Button asChild className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
             <Link href="/create">Create oath</Link>
           </Button>
         </CardHeader>
@@ -199,7 +199,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
       </div>
 
       <Tabs defaultValue="active" className="space-y-4">
-        <TabsList className="bg-oath-surface/70">
+        <TabsList className="bg-muted">
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="failed">Failed</TabsTrigger>
@@ -219,7 +219,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
                   }
                 >
                   <DialogTrigger asChild>
-                    <Button className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90">
+                    <Button className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
                       Submit today&apos;s proof
                     </Button>
                   </DialogTrigger>
@@ -228,7 +228,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
                       <DialogTitle>Day {commitment.proofCount + 1} proof</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
-                      <div className="rounded-2xl border border-oath-border bg-background/40 p-4">
+                      <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
                         <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
                           Goal
                         </p>
@@ -246,7 +246,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
                         placeholder="Optional public note"
                         className="border-oath-border bg-background/50"
                       />
-                      <div className="space-y-2 rounded-2xl border border-oath-border bg-background/40 p-4">
+                      <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="text-sm font-medium text-foreground">Photo proof</p>
@@ -282,7 +282,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
                           proofText.trim().length === 0 ||
                           !walletAddress
                         }
-                        className="w-full rounded-full bg-oath-gold text-black hover:bg-oath-gold/90"
+                        className="w-full rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
                       >
                         {isPending ? "Submitting..." : "Submit proof"}
                       </Button>
@@ -316,7 +316,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
 
         <TabsContent value="coach" className="space-y-4">
           {summary.inbox.map((thread) => (
-            <Card key={thread.slug} className="border-oath-border/70 bg-oath-surface/80">
+            <Card key={thread.slug} className="border-oath-border bg-card">
               <CardHeader>
                 <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
                   Coach thread
@@ -325,7 +325,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
               </CardHeader>
               <CardContent className="space-y-3">
                 {thread.messages.map((message) => (
-                  <div key={message.content} className="rounded-2xl border-l-4 border-oath-gold bg-background/40 p-4">
+                  <div key={message.content} className="rounded-[var(--radius)] border-l-4 border-oath-gold bg-background/40 p-4">
                     <p className="text-sm leading-7 text-muted-foreground">{message.content}</p>
                     <p className="mt-2 text-xs uppercase tracking-[0.22em] text-oath-muted-text">
                       {message.createdAtLabel}
@@ -346,7 +346,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
                 <Button
                   onClick={() => submitReply(thread.slug)}
                   disabled={isPending || !(replyText[thread.slug]?.trim().length)}
-                  className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90"
+                  className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
                 >
                   Send reply
                 </Button>
@@ -367,11 +367,11 @@ function CommitmentRow({
   action: ReactNode;
 }) {
   return (
-    <Card className="border-oath-border/70 bg-oath-surface/80">
+    <Card className="border-oath-border bg-card">
       <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className="bg-oath-gold/10 text-oath-gold hover:bg-oath-gold/20">
+            <Badge className="bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
               {commitment.category}
             </Badge>
             <span className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
@@ -391,7 +391,7 @@ function CommitmentRow({
 
 function CompletedRow({ commitment }: { commitment: CommitmentSummary }) {
   return (
-    <Card className="border-oath-border/70 bg-oath-surface/80">
+    <Card className="border-oath-border bg-card">
       <CardContent className="space-y-3 p-5">
         <Badge className="bg-oath-green/10 text-oath-green hover:bg-oath-green/20">
           Completed
@@ -407,7 +407,7 @@ function CompletedRow({ commitment }: { commitment: CommitmentSummary }) {
 
 function FailedRow({ commitment }: { commitment: CommitmentSummary }) {
   return (
-    <Card className="border-oath-border/70 bg-oath-surface/80">
+    <Card className="border-oath-border bg-card">
       <CardContent className="space-y-3 p-5">
         <Badge className="bg-oath-red/10 text-oath-red hover:bg-oath-red/20">
           Failed
@@ -423,7 +423,7 @@ function FailedRow({ commitment }: { commitment: CommitmentSummary }) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="border-oath-border/70 bg-oath-surface/80">
+    <Card className="border-oath-border bg-card">
       <CardContent className="space-y-2 p-5">
         <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">{label}</p>
         <p className="text-3xl font-semibold tracking-[-0.03em]">{value}</p>
@@ -434,7 +434,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <Card className="border-oath-border/70 bg-oath-surface/80 md:col-span-2">
+    <Card className="border-oath-border bg-card md:col-span-2">
       <CardContent className="p-6 text-sm text-muted-foreground">{text}</CardContent>
     </Card>
   );

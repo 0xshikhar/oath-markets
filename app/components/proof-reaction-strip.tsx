@@ -136,12 +136,12 @@ export function ProofReactionStrip({
 
   const buttonClassName = useMemo(
     () =>
-      "rounded-full border border-oath-border bg-background/50 px-3 py-2 text-xs transition hover:border-oath-gold/40 hover:bg-oath-gold/10",
+      "rounded-[var(--radius)] border border-oath-border bg-background/50 px-3 py-2 text-xs transition hover:border-oath-gold/40 hover:bg-oath-gold/10",
     []
   );
 
   return (
-    <div className="space-y-3 rounded-2xl border border-oath-border bg-background/30 p-3">
+    <div className="space-y-3 rounded-[var(--radius)] border border-oath-border bg-background/30 p-3">
       <div className="flex flex-wrap gap-2">
         {reactions.map((reaction) => {
           const active = state.viewerTypes.includes(reaction.type);
@@ -154,7 +154,7 @@ export function ProofReactionStrip({
               variant="outline"
               className={`${buttonClassName} ${
                 active
-                  ? "border-oath-gold bg-oath-gold/10 text-oath-gold"
+                  ? "border-oath-gold bg-oath-gold/10 text-foreground"
                   : "text-muted-foreground"
               }`}
               disabled={isLoading || !walletAddress}

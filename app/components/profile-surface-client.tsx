@@ -20,9 +20,9 @@ export function ProfileSurfaceClient({ profile }: ProfileSurfaceClientProps) {
 
   return (
     <section className="space-y-6">
-      <Card className="border-oath-border/70 bg-oath-surface/80">
+      <Card className="border-oath-border bg-card">
         <CardHeader className="space-y-4">
-          <Badge className="w-fit bg-oath-gold/10 text-oath-gold hover:bg-oath-gold/20">
+          <Badge className="w-fit bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
             Reputation profile
           </Badge>
           <CardTitle className="text-4xl tracking-[-0.04em] sm:text-5xl">
@@ -31,7 +31,7 @@ export function ProfileSurfaceClient({ profile }: ProfileSurfaceClientProps) {
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{profile.handle}</span>
             {profile.verified ? (
-              <span className="rounded-full border border-oath-green/30 bg-oath-green/10 px-2 py-1 text-xs text-oath-green">
+              <span className="rounded-[var(--radius)] border border-oath-green/30 bg-oath-green/10 px-2 py-1 text-xs text-oath-green">
                 Verified human
               </span>
             ) : null}
@@ -54,7 +54,7 @@ export function ProfileSurfaceClient({ profile }: ProfileSurfaceClientProps) {
       </Card>
 
       <Tabs defaultValue="active" className="space-y-4">
-        <TabsList className="bg-oath-surface/70">
+        <TabsList className="bg-muted">
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="failed">Failed</TabsTrigger>
@@ -93,7 +93,7 @@ export function ProfileSurfaceClient({ profile }: ProfileSurfaceClientProps) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-oath-border bg-background/40 p-4">
+    <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
       <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">
         {label}
       </p>
@@ -104,7 +104,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <Card className="border-oath-border/70 bg-oath-surface/80 md:col-span-2">
+    <Card className="border-oath-border bg-card md:col-span-2">
       <CardContent className="p-6 text-sm text-muted-foreground">{text}</CardContent>
     </Card>
   );

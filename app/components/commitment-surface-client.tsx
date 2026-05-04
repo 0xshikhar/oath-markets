@@ -120,10 +120,10 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
 
   return (
     <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-      <Card className="border-oath-border/70 bg-oath-surface/80">
+      <Card className="border-oath-border bg-card">
         <CardHeader className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className="bg-oath-gold/10 text-oath-gold hover:bg-oath-gold/20">
+            <Badge className="bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
               {commitment.category}
             </Badge>
             <Badge variant="outline" className="border-oath-border text-oath-muted-text">
@@ -156,7 +156,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
               <span className="text-oath-muted-text">
                 Day {commitment.proofCount} of {commitment.totalDays}
               </span>
-              <span className="font-mono text-oath-gold">{commitment.progressPercent}%</span>
+              <span className="font-mono text-oath-black">{commitment.progressPercent}%</span>
             </div>
             <Progress value={commitment.progressPercent} className="h-2 transition-all" />
           </div>
@@ -171,7 +171,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
           <div className="flex flex-wrap gap-3">
             <Dialog open={beliefOpen} onOpenChange={setBeliefOpen}>
               <DialogTrigger asChild>
-                <Button className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90">
+                <Button className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
                   Believe in them
                 </Button>
               </DialogTrigger>
@@ -180,7 +180,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
                   <DialogTitle>Believe in this oath</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="rounded-2xl border border-oath-border bg-background/40 p-4">
+                  <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
                     <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
                       Commitment
                     </p>
@@ -197,23 +197,23 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
                       className="border-oath-border bg-background/50"
                     />
                   </div>
-                  <div className="rounded-2xl border border-oath-border bg-background/40 p-4 text-sm leading-7 text-muted-foreground">
+                  <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 text-sm leading-7 text-muted-foreground">
                     Your stake returns on failure. On success, believers share the faith fee.
                   </div>
                   <Button
                     onClick={submitBelief}
                     disabled={isBelieving || !walletAddress}
-                    className="w-full rounded-full bg-oath-gold text-black hover:bg-oath-gold/90"
+                    className="w-full rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
                   >
                     {isBelieving ? "Staking..." : "Believe in them"}
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
-            <Button variant="outline" className="rounded-full border-oath-border bg-background/40" onClick={copyLink}>
+            <Button variant="outline" className="rounded-[var(--radius)] border-oath-border bg-background/40" onClick={copyLink}>
               Copy link
             </Button>
-            <Button asChild variant="ghost" className="rounded-full text-oath-gold hover:bg-oath-gold/10 hover:text-oath-gold">
+            <Button asChild variant="ghost" className="rounded-[var(--radius)] text-oath-black hover:bg-oath-gold/10 hover:text-oath-black">
               <Link href={`/api/og/${commitment.slug}`}>OG card</Link>
             </Button>
           </div>
@@ -221,7 +221,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
       </Card>
 
       <div className="space-y-6">
-        <Card className="border-oath-border/70 bg-oath-surface/80">
+        <Card className="border-oath-border bg-card">
           <CardHeader>
             <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
               Proof feed
@@ -231,7 +231,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
           <CardContent className="space-y-4">
             {commitment.proofSamples.length > 0 ? (
               commitment.proofSamples.map((proof) => (
-                <div key={proof.dayNumber} className="rounded-2xl border border-oath-border bg-background/40 p-4">
+                <div key={proof.dayNumber} className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium text-foreground">Day {proof.dayNumber}</p>
                     <p className="text-xs text-oath-muted-text">{proof.createdAtLabel}</p>
@@ -242,7 +242,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
                       href={proof.imageUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 block overflow-hidden rounded-2xl border border-oath-border"
+                      className="mt-3 block overflow-hidden rounded-[var(--radius)] border border-oath-border"
                     >
                       <div
                         className="h-48 w-full bg-cover bg-center"
@@ -256,7 +256,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
                       href={proof.linkUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 inline-flex rounded-full border border-oath-border px-3 py-1 text-xs text-oath-gold hover:bg-oath-gold/10"
+                      className="mt-3 inline-flex rounded-[var(--radius)] border border-oath-border px-3 py-1 text-xs text-oath-black hover:bg-oath-gold/10"
                     >
                       Open link
                     </a>
@@ -275,14 +275,14 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-oath-border bg-background/40 p-4 text-sm text-muted-foreground">
+              <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 text-sm text-muted-foreground">
                 No proof yet. This streak will light up when the first update lands.
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-oath-border/70 bg-oath-surface/80">
+        <Card className="border-oath-border bg-card">
           <CardHeader>
             <Badge className="w-fit bg-oath-green/10 text-oath-green hover:bg-oath-green/20">
               Coach notes
@@ -291,7 +291,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
           </CardHeader>
           <CardContent className="space-y-3">
             {commitment.coachMessages.map((message) => (
-              <div key={message.createdAtLabel + message.content} className="rounded-2xl border-l-4 border-oath-gold bg-background/40 p-4">
+              <div key={message.createdAtLabel + message.content} className="rounded-[var(--radius)] border-l-4 border-oath-gold bg-background/40 p-4">
                 <p className="text-sm leading-7 text-muted-foreground">{message.content}</p>
               </div>
             ))}
@@ -306,7 +306,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
               <Button
                 onClick={submitComment}
                 disabled={isCommenting || comment.trim().length === 0 || !walletAddress}
-                className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90"
+                className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
               >
                 {isCommenting ? "Posting..." : "Post comment"}
               </Button>
@@ -314,7 +314,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
           </CardContent>
         </Card>
 
-        <Card className="border-oath-border/70 bg-oath-surface/80">
+        <Card className="border-oath-border bg-card">
           <CardHeader>
             <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
               Comments
@@ -326,7 +326,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
               commitment.comments.map((commentItem) => (
                 <div
                   key={commentItem.createdAtLabel + commentItem.content}
-                  className="rounded-2xl border border-oath-border bg-background/40 p-4"
+                  className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium text-foreground">
@@ -342,7 +342,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-oath-border bg-background/40 p-4 text-sm text-muted-foreground">
+              <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 text-sm text-muted-foreground">
                 No comments yet. Be the first to react.
               </div>
             )}
@@ -355,7 +355,7 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-oath-border bg-background/40 p-4">
+    <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
       <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">
         {label}
       </p>

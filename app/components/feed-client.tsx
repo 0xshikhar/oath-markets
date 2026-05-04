@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,13 @@ type FeedClientProps = {
   initialCursor?: string | null;
 };
 
+type FeedApiResponse =
+  | (FeedResult & { ok: true })
+  | {
+      ok: false;
+      error?: string;
+    };
+
 export function FeedClient({
   initialEvents = [],
   initialCursor = null,
@@ -22,32 +29,59 @@ export function FeedClient({
   const walletAddress = wallet?.account.address
     ? String(wallet.account.address)
     : undefined;
+
+  if (!walletAddress) {
+    return (
+      <Card className="border-oath-border bg-card">
+        <CardContent className="space-y-4 p-6">
+          <p className="text-sm text-muted-foreground">
+            Connect a wallet to unlock your personalized activity feed.
+          </p>
+          <Button asChild className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
+            <Link href="/dashboard">Open dashboard</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <FeedTimeline
+      key={walletAddress}
+      walletAddress={walletAddress}
+      initialEvents={initialEvents}
+      initialCursor={initialCursor}
+    />
+  );
+}
+
+function FeedTimeline({
+  walletAddress,
+  initialEvents,
+  initialCursor,
+}: {
+  walletAddress: string;
+  initialEvents: ActivityEvent[];
+  initialCursor: string | null;
+}) {
   const [events, setEvents] = useState<ActivityEvent[]>(initialEvents);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    if (!walletAddress) {
-      setEvents([]);
-      setCursor(null);
-      return;
-    }
-
     let cancelled = false;
 
     async function loadFeed() {
-      const currentWalletAddress = walletAddress;
-      if (!currentWalletAddress) return;
-      setIsLoading(true);
       try {
         const response = await fetch(
-          `/api/feed?walletAddress=${encodeURIComponent(
-            currentWalletAddress
-          )}&limit=20`
+          `/api/feed?walletAddress=${encodeURIComponent(walletAddress)}&limit=20`
         );
-        const data = (await response.json()) as any;
-        if (!response.ok || !data.ok) {
+        const data = (await response.json()) as FeedApiResponse;
+        if (!response.ok) {
+          throw new Error("Unable to load feed");
+        }
+        if (!data.ok) {
           throw new Error(data.error ?? "Unable to load feed");
         }
 
@@ -74,33 +108,35 @@ export function FeedClient({
     };
   }, [walletAddress]);
 
-  const emptyMessage = useMemo(() => {
-    if (!walletAddress) return "Connect your wallet to see who you follow.";
-    if (!hasLoaded || isLoading) return "Loading your feed...";
-    return "Follow some makers to see their oaths here.";
-  }, [hasLoaded, isLoading, walletAddress]);
+  const emptyMessage = !hasLoaded || isLoading
+    ? "Loading your feed..."
+    : "Follow some makers to see their oaths here.";
 
-  if (!walletAddress) {
-    return (
-      <Card className="border-oath-border/70 bg-oath-surface/80">
-        <CardContent className="space-y-4 p-6">
-          <p className="text-sm text-muted-foreground">
-            Connect a wallet to unlock your personalized activity feed.
-          </p>
-          <Button asChild className="rounded-md bg-oath-gold text-black hover:bg-oath-gold/90">
-            <Link href="/dashboard">Open dashboard</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleLoadMore = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `/api/feed?walletAddress=${encodeURIComponent(
+          walletAddress
+        )}&cursor=${encodeURIComponent(cursor ?? "")}&limit=20`
+      );
+      const data = (await response.json()) as FeedApiResponse;
+      if (response.ok && data.ok) {
+        setEvents((current) => [...current, ...data.events]);
+        setCursor(data.nextCursor);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <section className="space-y-4">
       {events.length > 0 ? (
         events.map((event) => <FeedEventCard key={event.id} event={event} />)
       ) : (
-        <Card className="border-oath-border/70 bg-oath-surface/80">
+        <Card className="border-oath-border bg-card">
           <CardContent className="p-6 text-sm text-muted-foreground">
             {emptyMessage}
           </CardContent>
@@ -111,27 +147,8 @@ export function FeedClient({
         <div className="flex justify-center">
           <Button
             variant="outline"
-            className="rounded-md border-oath-border bg-background/40"
-            onClick={async () => {
-            if (!walletAddress || isLoading) return;
-              const currentWalletAddress = walletAddress;
-              if (!currentWalletAddress) return;
-              setIsLoading(true);
-              try {
-                const response = await fetch(
-                  `/api/feed?walletAddress=${encodeURIComponent(
-                    currentWalletAddress
-                  )}&cursor=${encodeURIComponent(cursor)}&limit=20`
-                );
-                const data = (await response.json()) as any;
-                if (response.ok && data.ok) {
-                  setEvents((current) => [...current, ...data.events]);
-                  setCursor(data.nextCursor);
-                }
-              } finally {
-                setIsLoading(false);
-              }
-            }}
+            className="rounded-[var(--radius)] border-oath-border bg-background/40"
+            onClick={handleLoadMore}
           >
             Load more
           </Button>
@@ -143,7 +160,7 @@ export function FeedClient({
 
 function FeedEventCard({ event }: { event: ActivityEvent }) {
   return (
-    <Card className="border-oath-border/70 bg-oath-surface/80">
+    <Card className="border-oath-border bg-card">
       <CardHeader className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <AvatarBubble
@@ -167,7 +184,7 @@ function FeedEventCard({ event }: { event: ActivityEvent }) {
         {event.type === "NEW_OATH" ? (
           <EventBody
             badgeLabel="New oath"
-            badgeClassName="bg-oath-gold/10 text-oath-gold"
+            badgeClassName="bg-oath-gold/10 text-oath-black"
             title={event.title}
             description={event.description}
             footerLeft={`${event.totalDays} days`}
@@ -219,7 +236,7 @@ function FeedEventCard({ event }: { event: ActivityEvent }) {
         ) : null}
 
         <div className="flex justify-end">
-          <Button asChild variant="ghost" className="rounded-md text-oath-gold hover:bg-oath-gold/10">
+          <Button asChild variant="ghost" className="rounded-[var(--radius)] text-oath-black hover:bg-oath-gold/10">
             <Link href={event.publicUrl}>Open oath</Link>
           </Button>
         </div>
@@ -278,7 +295,7 @@ function AvatarBubble({
         )}
       </div>
       {verified ? (
-        <span className="absolute -right-1 -top-1 rounded-full border border-oath-green/30 bg-oath-green/10 px-1.5 py-0.5 text-[0.55rem] font-semibold text-oath-green">
+        <span className="absolute -right-1 -top-1 rounded-[var(--radius)] border border-oath-green/30 bg-oath-green/10 px-1.5 py-0.5 text-[0.55rem] font-semibold text-oath-green">
           ✓
         </span>
       ) : null}

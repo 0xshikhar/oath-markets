@@ -134,14 +134,14 @@ export function VaultCard() {
 
   if (status !== "connected") {
     return (
-      <section className="w-full space-y-4 rounded-2xl border border-border-low bg-card p-6 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.35)]">
+      <section className="w-full space-y-4 rounded-[var(--radius)] border border-border-low bg-card p-6 shadow-none">
         <div className="space-y-1">
           <p className="text-lg font-semibold">SOL Vault</p>
           <p className="text-sm text-muted">
             Connect your wallet to interact with the vault program.
           </p>
         </div>
-        <div className="rounded-lg bg-cream/50 p-4 text-center text-sm text-muted">
+        <div className="rounded-[var(--radius)] bg-cream/50 p-4 text-center text-sm text-muted">
           Wallet not connected
         </div>
       </section>
@@ -149,7 +149,7 @@ export function VaultCard() {
   }
 
   return (
-    <section className="w-full space-y-4 rounded-2xl border border-border-low bg-card p-6 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.35)]">
+    <section className="w-full space-y-4 rounded-[var(--radius)] border border-border-low bg-card p-6 shadow-none">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <p className="text-lg font-semibold">SOL Vault</p>
@@ -157,13 +157,13 @@ export function VaultCard() {
             Deposit SOL into your personal vault PDA and withdraw anytime.
           </p>
         </div>
-        <span className="rounded-full bg-cream px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/80">
+        <span className="rounded-[var(--radius)] bg-cream px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/80">
           {(vaultLamports ?? 0n) > 0n ? "Has funds" : "Empty"}
         </span>
       </div>
 
       {/* Vault Balance */}
-      <div className="rounded-xl border border-border-low bg-cream/30 p-4">
+      <div className="rounded-[var(--radius)] border border-border-low bg-cream/30 p-4">
         <p className="text-xs uppercase tracking-wide text-muted">
           Vault Balance
         </p>
@@ -213,7 +213,7 @@ export function VaultCard() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             disabled={isSending}
-            className="flex-1 rounded-lg border border-border-low bg-card px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-foreground/30 disabled:opacity-50 disabled:pointer-events-none"
+            className="flex-1 rounded-[var(--radius)] border border-border-low bg-card px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-foreground/30 disabled:opacity-50 disabled:pointer-events-none"
           />
           <button
             onClick={handleDeposit}
@@ -223,7 +223,7 @@ export function VaultCard() {
               parseFloat(amount) <= 0 ||
               (vaultLamports ?? 0n) > 0n
             }
-            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-xs transition hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none"
+            className="rounded-[var(--radius)] bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none"
           >
             {isSending ? "Confirming..." : "Deposit"}
           </button>
@@ -239,7 +239,7 @@ export function VaultCard() {
       <button
         onClick={handleWithdraw}
         disabled={isSending || !vaultLamports}
-        className="w-full rounded-lg border border-border-low bg-card px-4 py-2.5 text-sm font-medium shadow-xs transition hover:bg-cream disabled:opacity-50 disabled:pointer-events-none"
+        className="w-full rounded-[var(--radius)] border border-border-low bg-card px-4 py-2.5 text-sm font-medium transition hover:bg-cream disabled:opacity-50 disabled:pointer-events-none"
       >
         {isSending ? "Confirming..." : "Withdraw All"}
       </button>
@@ -263,7 +263,7 @@ export function VaultCard() {
             href="https://www.anchor-lang.com/docs/quickstart"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-md bg-cream px-2 py-1 font-medium transition hover:bg-cream/70"
+            className="inline-flex items-center gap-1 rounded-[var(--radius)] bg-cream px-2 py-1 font-medium transition hover:bg-cream/70"
           >
             Anchor Quickstart
           </a>
@@ -271,7 +271,7 @@ export function VaultCard() {
             href="https://solana.com/docs/programs/deploying"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-md bg-cream px-2 py-1 font-medium transition hover:bg-cream/70"
+            className="inline-flex items-center gap-1 rounded-[var(--radius)] bg-cream px-2 py-1 font-medium transition hover:bg-cream/70"
           >
             Deploy Programs
           </a>

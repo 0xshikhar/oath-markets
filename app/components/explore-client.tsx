@@ -105,11 +105,11 @@ export function ExploreClient({
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="space-y-6">
-        <Card className="border-oath-border/70 bg-oath-surface/80">
+        <Card className="border-oath-border bg-card">
           <CardHeader className="space-y-6 p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-3">
-                <Badge className="w-fit rounded-md border border-oath-border bg-background/50 text-[0.68rem] uppercase tracking-[0.26em] text-oath-muted-text">
+                <Badge className="w-fit rounded-[var(--radius)] border border-oath-border bg-background/50 text-[0.68rem] uppercase tracking-[0.26em] text-oath-muted-text">
                   Explore
                 </Badge>
                 <div className="space-y-2">
@@ -122,7 +122,7 @@ export function ExploreClient({
                   </p>
                 </div>
               </div>
-              <Button asChild className="rounded-md bg-oath-gold text-black hover:bg-oath-gold/90">
+              <Button asChild className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
                 <Link href="/create">Start an oath</Link>
               </Button>
             </div>
@@ -136,7 +136,7 @@ export function ExploreClient({
                   pushFilters({ search: value });
                 }}
                 placeholder="Search by goal, maker, or proof type"
-                className="rounded-md border-oath-border bg-background/50"
+                className="rounded-[var(--radius)] border-oath-border bg-background/50"
               />
               <Select
                 value={sort}
@@ -146,7 +146,7 @@ export function ExploreClient({
                   pushFilters({ sort: nextSort });
                 }}
               >
-                <SelectTrigger className="rounded-md border-oath-border bg-background/50">
+                <SelectTrigger className="rounded-[var(--radius)] border-oath-border bg-background/50">
                   <SelectValue placeholder="Sort commitments" />
                 </SelectTrigger>
                 <SelectContent>
@@ -169,8 +169,8 @@ export function ExploreClient({
                     variant="outline"
                     className={
                       active
-                        ? "rounded-md border-oath-gold bg-oath-gold/10 text-oath-gold hover:bg-oath-gold/15"
-                        : "rounded-md border-oath-border bg-background/40 text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                        ? "rounded-[var(--radius)] border-oath-gold bg-oath-gold/10 text-oath-black hover:bg-oath-gold/15"
+                        : "rounded-[var(--radius)] border-oath-border bg-background/40 text-muted-foreground hover:bg-background/60 hover:text-foreground"
                     }
                     onClick={() => {
                       setCategory(item);
@@ -204,7 +204,7 @@ export function ExploreClient({
               <ExploreResultCard key={commitment.slug} commitment={commitment} />
             ))
           ) : (
-            <Card className="border-oath-border/70 bg-oath-surface/80">
+            <Card className="border-oath-border bg-card">
               <CardContent className="p-6 text-sm text-muted-foreground">
                 No oaths found. Be the first to create one.
               </CardContent>
@@ -213,9 +213,9 @@ export function ExploreClient({
         </div>
       </div>
 
-      <Card className="h-fit border-oath-border/70 bg-oath-surface/80 lg:sticky lg:top-28">
+      <Card className="h-fit border-oath-border bg-card lg:sticky lg:top-28">
         <CardHeader className="space-y-3">
-          <Badge className="w-fit rounded-md border border-oath-border bg-background/50 text-[0.68rem] uppercase tracking-[0.26em] text-oath-muted-text">
+          <Badge className="w-fit rounded-[var(--radius)] border border-oath-border bg-background/50 text-[0.68rem] uppercase tracking-[0.26em] text-oath-muted-text">
             Feed lens
           </Badge>
           <CardTitle className="text-2xl tracking-[-0.03em]">
@@ -228,7 +228,7 @@ export function ExploreClient({
             glance. The goal, stake, believers, and proof cadence should be
             obvious without reading a long block of copy.
           </p>
-          <div className="space-y-3 rounded-2xl border border-oath-border bg-background/30 p-4">
+          <div className="space-y-3 rounded-[var(--radius)] border border-oath-border bg-background/30 p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
                 Hot right now
@@ -240,7 +240,7 @@ export function ExploreClient({
                 <Link
                   key={commitment.slug}
                   href={commitment.publicUrl}
-                  className="block rounded-xl border border-oath-border bg-background/40 p-3 transition hover:border-oath-gold/30 hover:bg-oath-gold/5"
+                  className="block rounded-[var(--radius)] border border-oath-border bg-background/40 p-3 transition hover:border-oath-gold/30 hover:bg-oath-gold/5"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
@@ -251,7 +251,7 @@ export function ExploreClient({
                         {commitment.makerHandle} · {commitment.believerCount} believers
                       </p>
                     </div>
-                    <span className="rounded-full border border-oath-border px-2 py-1 text-xs text-oath-gold">
+                    <span className="rounded-[var(--radius)] border border-oath-border px-2 py-1 text-xs text-oath-black">
                       {commitment.reactionCount24h}
                     </span>
                   </div>
@@ -259,13 +259,13 @@ export function ExploreClient({
               ))}
             </div>
           </div>
-          <div className="space-y-2 rounded-md border border-oath-border bg-background/40 p-4">
+          <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
             <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
               Current filter
             </p>
             <p className="text-foreground">{category}</p>
           </div>
-          <div className="space-y-2 rounded-md border border-oath-border bg-background/40 p-4">
+          <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
             <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
               Sort
             </p>
@@ -273,7 +273,7 @@ export function ExploreClient({
               {sortOptions.find((option) => option.value === sort)?.label}
             </p>
           </div>
-          <div className="space-y-2 rounded-md border border-oath-border bg-background/40 p-4">
+          <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
             <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
               Audience
             </p>
@@ -287,20 +287,20 @@ export function ExploreClient({
 
 function ExploreResultCard({ commitment }: { commitment: CommitmentSummary }) {
   return (
-    <Card className="border-oath-border/70 bg-oath-surface/80 transition-colors duration-200 hover:border-oath-gold/30">
+    <Card className="border-oath-border bg-card transition-colors duration-200 hover:border-oath-gold/30">
       <CardContent className="grid gap-4 p-5 sm:p-6 xl:grid-cols-[1fr_220px] xl:items-start">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant="outline"
-                className="rounded-md border-oath-border bg-background/50 text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
+                className="rounded-[var(--radius)] border-oath-border bg-background/50 text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
               >
                 {commitment.category}
               </Badge>
               <Badge
                 variant="outline"
-                className="rounded-md border-oath-border bg-background/50 text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
+                className="rounded-[var(--radius)] border-oath-border bg-background/50 text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
               >
                 {commitment.statusLabel}
               </Badge>
@@ -315,7 +315,7 @@ function ExploreResultCard({ commitment }: { commitment: CommitmentSummary }) {
               <span className="font-medium text-foreground">{commitment.makerName}</span>
               <span className="text-oath-muted-text">{commitment.makerHandle}</span>
               {commitment.makerVerified ? (
-                <span className="rounded-md border border-oath-green/30 bg-oath-green/10 px-2 py-0.5 text-[0.65rem] font-medium text-oath-green">
+                <span className="rounded-[var(--radius)] border border-oath-green/30 bg-oath-green/10 px-2 py-0.5 text-[0.65rem] font-medium text-oath-green">
                   Verified
                 </span>
               ) : null}
@@ -336,7 +336,7 @@ function ExploreResultCard({ commitment }: { commitment: CommitmentSummary }) {
           </div>
         </div>
 
-        <div className="space-y-4 rounded-md border border-oath-border bg-background/30 p-4">
+        <div className="space-y-4 rounded-[var(--radius)] border border-oath-border bg-background/30 p-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs uppercase tracking-[0.22em] text-oath-muted-text">
               <span>Progress</span>
@@ -351,7 +351,7 @@ function ExploreResultCard({ commitment }: { commitment: CommitmentSummary }) {
             <SmallStat label="Stake" value={commitment.stakeLabel} />
           </div>
 
-          <Button asChild className="w-full rounded-md bg-oath-gold text-black hover:bg-oath-gold/90">
+          <Button asChild className="w-full rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
             <Link href={commitment.publicUrl}>View oath</Link>
           </Button>
         </div>
@@ -362,29 +362,31 @@ function ExploreResultCard({ commitment }: { commitment: CommitmentSummary }) {
 
 function InfoStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-oath-border bg-background/40 p-4">
+    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
       <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">{label}</p>
-      <p className="mt-1 text-sm text-foreground">{value}</p>
+      <p className="mt-2 break-words text-sm leading-5 text-foreground">{value}</p>
     </div>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-oath-border bg-oath-surface/80 px-3 py-3">
+    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/80 px-3 py-3">
       <p className="text-[0.65rem] uppercase tracking-[0.2em] text-oath-muted-text">
         {label}
       </p>
-      <p className="mt-1 font-mono text-sm text-foreground">{value}</p>
+      <p className="mt-2 break-words font-mono text-sm leading-5 text-foreground">
+        {value}
+      </p>
     </div>
   );
 }
 
 function SmallStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-oath-border bg-background/40 px-3 py-2">
+    <div className="flex min-h-20 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 px-3 py-2">
       <p className="text-[0.6rem] uppercase tracking-[0.18em] text-oath-muted-text">{label}</p>
-      <p className="mt-1 text-sm text-foreground">{value}</p>
+      <p className="mt-2 break-words text-sm leading-5 text-foreground">{value}</p>
     </div>
   );
 }
