@@ -11,23 +11,20 @@ const navItems = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-oath-border/70 bg-background/75 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
+      <div className="mx-auto flex h-20 max-w-[1140px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-md border border-oath-border bg-oath-surface text-sm font-black text-oath-gold">
-            /
-          </span>
           <span className="flex flex-col leading-none">
-            <span className="text-[0.68rem] font-semibold tracking-[0.28em] text-oath-muted-text">
+            <span className="text-2xl font-black uppercase tracking-[-0.05em] text-foreground">
               OATH
             </span>
-            <span className="text-xs text-muted-foreground">
-              Lyra-style accountability protocol
+            <span className="text-[0.68rem] uppercase tracking-[0.28em] text-oath-muted-text">
+              Public record
             </span>
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
+        <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -40,9 +37,6 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <span className="hidden rounded-md border border-oath-border bg-oath-surface/70 px-3 py-1 text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text lg:inline-flex">
-            Frontier 2026
-          </span>
           <ThemeToggle />
           <WalletButton />
         </div>

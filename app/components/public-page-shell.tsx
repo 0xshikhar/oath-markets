@@ -25,28 +25,28 @@ export function PublicPageShell({
       <div className="relative z-10">
         <SiteHeader />
 
-        <main className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
-          <section className="space-y-5">
+        <main className="mx-auto max-w-[1140px] px-4 pb-20 pt-10 sm:px-6 lg:px-8">
+          <section className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <Badge
                 variant="outline"
-                className="rounded-md border-oath-border bg-oath-surface/80 text-[0.68rem] uppercase tracking-[0.28em] text-oath-muted-text"
+                className="rounded-[var(--radius)] border-oath-border bg-oath-surface/80 text-[0.68rem] uppercase tracking-[0.28em] text-oath-muted-text"
               >
                 {eyebrow}
               </Badge>
               {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
             </div>
             <div className="space-y-3">
-              <h1 className="max-w-4xl text-3xl font-semibold tracking-[-0.03em] sm:text-4xl lg:text-5xl">
+              <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl lg:text-6xl">
                 {title}
               </h1>
-              <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
+              <p className="max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
                 {description}
               </p>
             </div>
           </section>
 
-          <div className="mt-8">{children}</div>
+          <div className="mt-10">{children}</div>
         </main>
 
         <SiteFooter />

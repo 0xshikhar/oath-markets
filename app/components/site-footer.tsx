@@ -13,8 +13,8 @@ const footerLinks = [
 
 export function SiteFooter() {
   return (
-    <footer className="relative z-10 border-t border-oath-border/70 bg-background/60">
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
+    <footer className="relative z-10 border-t border-border bg-background/70">
+      <div className="mx-auto grid max-w-[1140px] gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
         <div className="space-y-2">
           <p className="text-[0.68rem] uppercase tracking-[0.28em] text-oath-muted-text">
             OATH
@@ -30,12 +30,12 @@ export function SiteFooter() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-md border border-oath-border bg-oath-surface/60 px-4 py-2 transition hover:border-oath-gold/40 hover:text-foreground"
+              className="rounded-[var(--radius)] border border-oath-border bg-oath-surface/60 px-4 py-2 transition hover:border-oath-gold/40 hover:text-foreground"
             >
               {link.label}
             </Link>
           ))}
-          <span className="rounded-md border border-oath-border bg-oath-gold/10 px-4 py-2 text-oath-gold">
+          <span className="rounded-[var(--radius)] border border-oath-border bg-oath-gold/10 px-4 py-2 text-oath-black">
             Built on Solana
           </span>
         </div>
