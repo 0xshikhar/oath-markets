@@ -144,7 +144,31 @@ export async function getHotCommitments(limit = 3): Promise<HotCommitment[]> {
   }
 
   const since = new Date(Date.now() - DAY_MS);
-  const reactions = await socialPrisma.reaction.findMany({
+  const reactionDelegate = socialPrisma.reaction as
+    | {
+        findMany?: typeof socialPrisma.reaction.findMany;
+      }
+    | undefined;
+
+  if (!reactionDelegate?.findMany) {
+    return commitments
+      .map((commitment) => ({
+        ...commitment,
+        reactionCount24h: 0,
+      }))
+      .sort((a, b) => {
+        if (b.reactionCount24h !== a.reactionCount24h) {
+          return b.reactionCount24h - a.reactionCount24h;
+        }
+        if (b.believerCount !== a.believerCount) {
+          return b.believerCount - a.believerCount;
+        }
+        return b.progressPercent - a.progressPercent;
+      })
+      .slice(0, limit);
+  }
+
+  const reactions = await reactionDelegate.findMany({
     where: {
       createdAt: { gte: since },
       proof: {
