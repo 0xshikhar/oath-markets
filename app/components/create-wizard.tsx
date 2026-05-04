@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { normalizeCoachTone } from "@/lib/coach-tone";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import { useWallet } from "../lib/wallet/context";
 import type { CommitmentSummary } from "@/lib/oath-data";
@@ -60,6 +61,7 @@ type CommitmentCreateRequest = {
   description: string;
   category: WizardState["category"];
   proofType: WizardState["proofType"];
+  coachTone: string;
   stakeAmountSol: number;
   durationDays: number;
   visibility: WizardState["visibility"];
@@ -138,6 +140,7 @@ export function CreateWizard() {
           description: state.description,
           category: state.category,
           proofType: state.proofType,
+          coachTone: normalizeCoachTone(state.tone),
           stakeAmountSol: state.stakeAmountSol,
           durationDays: state.durationDays,
           visibility: state.visibility,
@@ -212,9 +215,9 @@ export function CreateWizard() {
           {steps.map((label, index) => (
             <Badge
               key={label}
-              className={`rounded-full px-4 py-2 ${
+              className={`rounded-[var(--radius)] px-4 py-2 ${
                 index === step
-                  ? "bg-oath-gold/15 text-oath-gold hover:bg-oath-gold/20"
+                  ? "bg-oath-gold/15 text-oath-black hover:bg-oath-gold/20"
                   : "bg-oath-surface/70 text-oath-muted-text hover:bg-oath-surface"
               }`}
               variant="outline"
@@ -226,9 +229,9 @@ export function CreateWizard() {
 
         <Progress value={progress} className="h-2" />
 
-        <Card className="border-oath-border/70 bg-oath-surface/80">
+        <Card className="border-oath-border bg-card">
           <CardHeader className="space-y-3">
-            <Badge className="w-fit bg-oath-gold/10 text-oath-gold hover:bg-oath-gold/20">
+            <Badge className="w-fit bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
               Step {step + 1}
             </Badge>
             <CardTitle className="text-2xl tracking-[-0.03em]">
@@ -316,7 +319,7 @@ export function CreateWizard() {
                   />
                 </Field>
                 <Field label="Proof cadence" hint="Required proof days matches duration">
-                  <div className="rounded-2xl border border-oath-border bg-background/40 p-4 text-sm text-muted-foreground">
+                  <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 text-sm text-muted-foreground">
                     {state.durationDays} days locked · {state.durationDays} proofs required
                   </div>
                 </Field>
@@ -422,7 +425,7 @@ export function CreateWizard() {
 
             {step === 5 && (
               <div className="space-y-4">
-                <div className="rounded-3xl border border-oath-border bg-background/40 p-5">
+                <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-5">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
@@ -432,7 +435,7 @@ export function CreateWizard() {
                         {walletAddress ?? "Connect a wallet to publish"}
                       </p>
                     </div>
-                    <Badge className="bg-oath-gold/10 text-oath-gold hover:bg-oath-gold/20">
+                    <Badge className="bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
                       {state.visibility}
                     </Badge>
                   </div>
@@ -451,7 +454,7 @@ export function CreateWizard() {
                 </div>
 
                 {createdCommitment ? (
-                  <div className="rounded-3xl border border-oath-green/30 bg-oath-green/10 p-5 text-sm text-oath-green">
+                  <div className="rounded-[var(--radius)] border border-oath-green/30 bg-oath-green/10 p-5 text-sm text-oath-green">
                     Oath created. Redirecting to {createdCommitment.publicUrl}
                   </div>
                 ) : null}
@@ -466,7 +469,7 @@ export function CreateWizard() {
             variant="outline"
             onClick={back}
             disabled={step === 0 || isPending}
-            className="rounded-full border-oath-border bg-oath-surface/70"
+            className="rounded-[var(--radius)] border-oath-border bg-oath-surface/70"
           >
             Back
           </Button>
@@ -474,24 +477,24 @@ export function CreateWizard() {
             <Button
               type="button"
               onClick={next}
-              className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90"
+              className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
             >
               Next
             </Button>
           ) : (
-                      <Button
-                        type="button"
-                        onClick={submit}
-                        disabled={isBusy}
-                        className="rounded-full bg-oath-gold text-black hover:bg-oath-gold/90"
-                      >
+            <Button
+              type="button"
+              onClick={submit}
+              disabled={isBusy}
+              className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
+            >
                 {isBusy ? "Launching..." : "Deploy oath"}
-                      </Button>
+            </Button>
           )}
         </div>
       </div>
 
-      <Card className="h-fit border-oath-border/70 bg-oath-surface/80 lg:sticky lg:top-28">
+      <Card className="h-fit border-oath-border bg-card lg:sticky lg:top-28">
         <CardHeader>
           <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
             Preview
@@ -499,7 +502,7 @@ export function CreateWizard() {
           <CardTitle className="text-2xl tracking-[-0.03em]">Public oath card</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-3xl border border-oath-border bg-background/40 p-5">
+          <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-5">
             <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
               Goal
             </p>
@@ -514,7 +517,7 @@ export function CreateWizard() {
             <Mini label="Stake" value={preview.stakeLabel} />
             <Mini label="Duration" value={`${preview.totalDays} days`} />
           </div>
-          <div className="rounded-3xl border border-oath-border bg-background/40 p-5">
+          <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-5">
             <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
               Wallet
             </p>
@@ -556,7 +559,7 @@ function Field({
 
 function Mini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-oath-border bg-background/40 p-4">
+    <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
       <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">{label}</p>
       <p className="mt-1 text-sm text-foreground">{value}</p>
     </div>

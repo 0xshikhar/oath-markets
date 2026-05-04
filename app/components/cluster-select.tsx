@@ -22,7 +22,7 @@ export function ClusterSelect() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border-low bg-card px-3 py-2 text-xs font-medium transition hover:bg-cream"
+        className="flex cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-border bg-background px-3 py-2 text-sm font-medium transition hover:bg-muted"
       >
         <span
           className="h-2 w-2 rounded-full"
@@ -41,7 +41,7 @@ export function ClusterSelect() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-40 rounded-xl border border-border-low bg-card p-2 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-2 w-40 rounded-[var(--radius)] border border-border bg-card p-2 shadow-none">
           <div className="space-y-1">
             {CLUSTERS.map((c) => (
               <button
@@ -50,8 +50,8 @@ export function ClusterSelect() {
                   setCluster(c);
                   setIsOpen(false);
                 }}
-                className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium transition hover:bg-cream ${
-                  c === cluster ? "bg-cream" : ""
+                className={`flex w-full cursor-pointer items-center gap-2 rounded-[var(--radius)] px-3 py-2 text-left text-sm font-medium transition hover:bg-muted ${
+                  c === cluster ? "bg-muted" : ""
                 }`}
               >
                 <span
