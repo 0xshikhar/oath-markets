@@ -41,7 +41,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
       actions={
         <Button
           asChild
-          className="rounded-md bg-oath-gold text-black hover:bg-oath-gold/90"
+          className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
         >
           <Link href="/create">Start an oath</Link>
         </Button>

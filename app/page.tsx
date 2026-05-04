@@ -24,7 +24,7 @@ export default async function Home() {
       <div className="relative z-10">
         <SiteHeader />
 
-        <main className="mx-auto max-w-7xl px-4 pb-20 pt-10 sm:px-6 lg:px-8">
+        <main className="mx-auto max-w-[1140px] px-4 pb-20 pt-10 sm:px-6 lg:px-8">
           <section className="grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
             <div className="space-y-8">
               <div className="space-y-6">
@@ -38,7 +38,7 @@ export default async function Home() {
                 <div className="max-w-4xl space-y-5">
                   <h1 className="max-w-4xl text-5xl font-semibold tracking-[-0.05em] sm:text-6xl lg:text-7xl">
                     Make a public oath.
-                    <span className="block text-oath-gold">Stake real SOL.</span>
+                    <span className="block text-oath-black">Stake real SOL.</span>
                     Follow through in public.
                   </h1>
                   <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
@@ -54,7 +54,7 @@ export default async function Home() {
                 <Button
                   asChild
                   size="lg"
-                  className="rounded-md bg-oath-gold px-6 text-black hover:bg-oath-gold/90"
+                  className="rounded-[var(--radius)] bg-oath-gold px-6 text-black hover:bg-oath-gold/90"
                 >
                   <Link href="/create">Create an oath</Link>
                 </Button>
@@ -62,7 +62,7 @@ export default async function Home() {
                   asChild
                   variant="outline"
                   size="lg"
-                  className="rounded-md border-oath-border bg-oath-surface/70 px-6 text-foreground hover:bg-oath-surface"
+                  className="rounded-[var(--radius)] border-oath-border bg-oath-surface/70 px-6 text-foreground hover:bg-oath-surface"
                 >
                   <Link href="/explore">Browse live commitments</Link>
                 </Button>
@@ -92,11 +92,11 @@ export default async function Home() {
             </div>
 
             <div className="space-y-4">
-              <Card className="overflow-hidden border-oath-border/70 bg-oath-surface/85 shadow-[0_24px_120px_-80px_rgba(0,0,0,0.95)]">
-                <CardHeader className="space-y-4 border-b border-oath-border/60 p-6">
+              <Card className="overflow-hidden border-oath-border bg-oath-surface/85">
+                <CardHeader className="space-y-4 border-b border-oath-border p-6">
                   <div className="flex items-center justify-between">
-                    <Badge className="bg-oath-gold/10 text-oath-gold hover:bg-oath-gold/20">
-                      Live surface
+<Badge className="bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
+                      Live
                     </Badge>
                     <span className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
                       Preview
@@ -116,7 +116,7 @@ export default async function Home() {
                       <span className="text-oath-muted-text">
                         Day {spotlight?.proofCount ?? 0} of {spotlight?.totalDays ?? 0}
                       </span>
-                      <span className="font-mono text-oath-gold">
+                      <span className="font-mono text-oath-black">
                         {spotlight?.progressPercent ?? 0}%
                       </span>
                     </div>
@@ -148,7 +148,7 @@ export default async function Home() {
                 </CardContent>
               </Card>
 
-              <Card className="border-oath-border/70 bg-oath-surface/70">
+              <Card className="border-oath-border bg-oath-surface/70">
                 <CardContent className="grid gap-3 p-6 sm:grid-cols-3">
                   <Pill label="Public page" value="SEO + OG ready" />
                   <Pill label="Escrow" value="SOL locked" />
@@ -192,7 +192,7 @@ export default async function Home() {
               <Button
                 asChild
                 variant="ghost"
-                className="rounded-md text-oath-gold hover:bg-oath-gold/10 hover:text-oath-gold"
+                className="rounded-[var(--radius)] text-oath-black hover:bg-oath-gold/10 hover:text-oath-black"
               >
                 <Link href="/explore">See all oaths</Link>
               </Button>
@@ -206,11 +206,11 @@ export default async function Home() {
           </section>
 
           <section className="mt-20 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <Card className="border-oath-border/70 bg-oath-surface/80">
+            <Card className="border-oath-border bg-oath-surface/80">
               <CardHeader>
-                <Badge className="w-fit bg-oath-gold/10 text-oath-gold hover:bg-oath-gold/20">
-                  Why OATH
-                </Badge>
+<Badge className="w-fit bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
+            How it works
+          </Badge>
                 <CardTitle className="text-3xl tracking-[-0.03em]">
                   Accountability that people can watch, fund, and verify
                 </CardTitle>
@@ -230,7 +230,7 @@ export default async function Home() {
               </CardContent>
             </Card>
 
-            <Card className="border-oath-border/70 bg-oath-surface/80">
+            <Card className="border-oath-border bg-oath-surface/80">
               <CardHeader>
                 <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
                   Launch path
@@ -261,7 +261,7 @@ export default async function Home() {
           </section>
 
           <section className="mt-20">
-            <Card className="border-oath-border/70 bg-oath-surface/80">
+            <Card className="border-oath-border bg-oath-surface/80">
               <CardContent className="grid gap-6 p-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
                 <div className="space-y-3">
                   <Badge className="w-fit bg-oath-green/10 text-oath-green hover:bg-oath-green/20">
@@ -280,17 +280,17 @@ export default async function Home() {
                 <div className="flex flex-wrap gap-3 lg:justify-end">
                 <Button
                   asChild
-                  className="rounded-md bg-oath-gold text-black hover:bg-oath-gold/90"
+                  className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
                 >
                   <Link href="/feed">Watch the feed</Link>
                 </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="rounded-md border-oath-border bg-background/40"
-                  >
-                    <Link href="/create">Make your own oath</Link>
-                  </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="rounded-[var(--radius)] border-oath-border bg-background/40"
+                >
+                  <Link href="/create">Make your own oath</Link>
+                </Button>
                 </div>
               </CardContent>
             </Card>
@@ -305,12 +305,14 @@ export default async function Home() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="border-oath-border/70 bg-oath-surface/70">
-      <CardContent className="space-y-2 p-4">
+    <Card className="border-oath-border bg-oath-surface/70">
+      <CardContent className="flex min-h-24 flex-col justify-between gap-2 p-4">
         <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
           {label}
         </p>
-        <p className="text-2xl font-semibold tracking-[-0.03em]">{value}</p>
+        <p className="break-words text-2xl font-semibold leading-tight tracking-[-0.03em]">
+          {value}
+        </p>
       </CardContent>
     </Card>
   );
@@ -318,22 +320,26 @@ function StatCard({ label, value }: { label: string; value: string }) {
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-oath-border bg-background/40 p-4">
+    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
       <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">
         {label}
       </p>
-      <p className="mt-1 font-mono text-sm text-foreground">{value}</p>
+      <p className="mt-2 break-words font-mono text-sm leading-5 text-foreground">
+        {value}
+      </p>
     </div>
   );
 }
 
 function Pill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-oath-border bg-background/40 p-4">
+    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
       <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">
         {label}
       </p>
-      <p className="mt-1 text-sm text-foreground">{value}</p>
+      <p className="mt-2 break-words text-sm leading-5 text-foreground">
+        {value}
+      </p>
     </div>
   );
 }
@@ -346,8 +352,8 @@ function MiniPromise({
   description: string;
 }) {
   return (
-    <div className="rounded-3xl border border-oath-border bg-oath-surface/60 p-5">
-      <p className="text-xs uppercase tracking-[0.24em] text-oath-gold">{title}</p>
+    <div className="rounded-[var(--radius)] border border-oath-border bg-oath-surface/60 p-5">
+      <p className="text-xs uppercase tracking-[0.24em] text-oath-black">{title}</p>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
     </div>
   );
@@ -355,11 +361,11 @@ function MiniPromise({
 
 function SignalRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-oath-border bg-background/40 p-4">
+    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
       <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">
         {label}
       </p>
-      <p className="mt-1 text-sm leading-6 text-foreground">{value}</p>
+      <p className="mt-2 break-words text-sm leading-6 text-foreground">{value}</p>
     </div>
   );
 }
@@ -374,9 +380,9 @@ function SectionCard({
   description: string;
 }) {
   return (
-    <Card className="border-oath-border/70 bg-oath-surface/80">
+    <Card className="border-oath-border bg-oath-surface/80">
       <CardHeader className="space-y-4">
-        <span className="text-xs uppercase tracking-[0.3em] text-oath-gold">
+        <span className="text-xs uppercase tracking-[0.3em] text-oath-black">
           {index}
         </span>
         <CardTitle className="text-2xl tracking-[-0.03em]">{title}</CardTitle>
@@ -390,11 +396,13 @@ function SectionCard({
 
 function LaunchRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-oath-border bg-background/40 p-4">
+    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
       <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
         {label}
       </p>
-      <p className="mt-1 text-sm leading-6 text-foreground">{value}</p>
+      <p className="mt-2 break-words text-sm leading-6 text-foreground">
+        {value}
+      </p>
     </div>
   );
 }

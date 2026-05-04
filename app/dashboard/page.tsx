@@ -15,7 +15,7 @@ export default async function DashboardPage() {
       actions={
         <Button
           asChild
-          className="rounded-md bg-oath-gold text-black hover:bg-oath-gold/90"
+          className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
         >
           <Link href="/create">Create oath</Link>
         </Button>

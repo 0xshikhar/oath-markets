@@ -20,7 +20,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       title="Public reputation profile."
       description="The profile page exposes oath score, status history, and commitment breakdowns for any wallet or handle."
       actions={
-        <Button asChild variant="outline" className="rounded-md border-oath-border bg-background/40">
+        <Button asChild variant="outline" className="rounded-[var(--radius)] border-oath-border bg-background/40">
           <Link href="/explore">Browse commitments</Link>
         </Button>
       }
