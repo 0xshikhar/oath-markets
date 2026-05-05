@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
+import { normalizeCoachTone } from "@/lib/coach-tone";
 import { prisma } from "@/lib/prisma";
 import { getCommitmentBySlug, type CommitmentDetail } from "@/lib/oath-data";
 
@@ -10,6 +12,7 @@ type CommitmentCreateInput = {
   description?: string;
   category?: string;
   proofType?: string;
+  coachTone?: string;
   stakeAmountSol?: number;
   durationDays?: number;
   visibility?: "PUBLIC" | "PRIVATE";
@@ -132,6 +135,7 @@ export async function POST(request: Request) {
       description: payload.description?.trim() || null,
       category: (payload.category ?? "CUSTOM") as CommitmentCategory,
       proofType: (payload.proofType ?? "TEXT") as ProofType,
+      coachTone: normalizeCoachTone(payload.coachTone),
       stakeAmountLamports,
       slashDestination: (payload.slashDestination ?? "TREASURY") as SlashDestination,
       startDate,
@@ -144,7 +148,7 @@ export async function POST(request: Request) {
       proofCount: 0,
       onchainAddress: payload.onchainAddress?.trim() || null,
       onchainTxSig: payload.onchainTxSig?.trim() || null,
-    },
+    } as unknown as Prisma.CommitmentUncheckedCreateInput,
   });
 
   return NextResponse.json({
