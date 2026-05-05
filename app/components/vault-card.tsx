@@ -16,7 +16,7 @@ import { parseTransactionError } from "../lib/errors";
 import { useCluster } from "./cluster-context";
 
 export function VaultCard() {
-  const { wallet, signer, status, isPreviewSession } = useWallet();
+  const { wallet, signer, status } = useWallet();
   const { send, isSending } = useSendTransaction();
   const { getExplorerUrl } = useCluster();
 
@@ -156,12 +156,6 @@ export function VaultCard() {
           <p className="text-sm text-muted">
             Deposit SOL into your personal vault PDA and withdraw anytime.
           </p>
-          {isPreviewSession ? (
-            <p className="text-xs text-muted">
-              Preview mode can inspect the vault, but on-chain actions require a
-              real connected wallet.
-            </p>
-          ) : null}
         </div>
         <span className="rounded-[var(--radius)] bg-cream px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/80">
           {(vaultLamports ?? 0n) > 0n ? "Has funds" : "Empty"}

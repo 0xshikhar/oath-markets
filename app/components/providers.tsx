@@ -6,15 +6,8 @@ import { PropsWithChildren, useState, useSyncExternalStore } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ClusterProvider } from "./cluster-context";
 import { SolanaClientProvider } from "../lib/solana-client-context";
-import {
-  HAS_PRIVY_APP_ID,
-  PRIVY_APP_ID,
-  PRIVY_CLIENT_ID,
-  createPrivyConfig,
-} from "../lib/privy";
-import {
-  WalletProvider,
-} from "../lib/wallet/context";
+import { HAS_PRIVY_APP_ID, PRIVY_APP_ID, PRIVY_CLIENT_ID, createPrivyConfig } from "../lib/privy";
+import { WalletProvider } from "../lib/wallet/context";
 
 const privyConfig = createPrivyConfig();
 

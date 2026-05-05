@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  createSolanaRpc,
-  createSolanaRpcSubscriptions,
-} from "@solana/kit";
+import { createSolanaRpc, createSolanaRpcSubscriptions } from "@solana/kit";
 import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
 
 const DEVNET_RPC_URL =
@@ -42,12 +39,6 @@ export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID?.trim() ?? "";
 export const PRIVY_CLIENT_ID =
   process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID?.trim() ?? "";
 export const HAS_PRIVY_APP_ID = Boolean(PRIVY_APP_ID);
-export const PRIVY_AUTH_URL =
-  process.env.NEXT_PUBLIC_PRIVY_AUTH_URL?.trim() ?? "";
-
-export const PREVIEW_AUTH_ENABLED =
-  process.env.NODE_ENV !== "production" &&
-  process.env.NEXT_PUBLIC_ENABLE_PREVIEW_AUTH !== "false";
 
 export function createPrivyConfig() {
   const solanaConnectors = toSolanaWalletConnectors({
@@ -55,7 +46,6 @@ export function createPrivyConfig() {
   });
 
   return {
-    ...(PRIVY_AUTH_URL ? { authUrl: PRIVY_AUTH_URL } : {}),
     appearance: {
       showWalletLoginFirst: true,
       walletChainType: "solana-only" as const,

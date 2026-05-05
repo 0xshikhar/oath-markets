@@ -24,11 +24,6 @@ import {
   type Address,
   type TransactionSigner,
 } from "@solana/kit";
-import { usePreviewSession } from "../preview-session";
-import {
-  createPreviewWalletAccount,
-  PREVIEW_WALLET_CONNECTOR,
-} from "../preview-wallet";
 import type {
   WalletAccount,
   WalletConnectorMetadata,
@@ -45,13 +40,12 @@ const WALLET_STATUS = {
 } as const;
 
 type WalletStatus = (typeof WALLET_STATUS)[keyof typeof WALLET_STATUS];
-type WalletMode = "privy" | "preview" | "loading";
-type WalletKind = "embedded" | "external" | "preview";
+type WalletMode = "privy" | "loading";
+type WalletKind = "embedded" | "external";
 
 type ManagedWallet = WalletSession & {
   kind: WalletKind;
   isEmbedded: boolean;
-  isPreview: boolean;
   rawWallet?: ConnectedStandardSolanaWallet;
 };
 
@@ -65,7 +59,6 @@ type WalletContextValue = {
   status: WalletStatus;
   error: unknown;
   isReady: boolean;
-  isPreviewSession: boolean;
 };
 
 const WalletContext = createContext<WalletContextValue | null>(null);
@@ -83,7 +76,6 @@ function createDisconnectedValue(mode: WalletMode): WalletContextValue {
     status: WALLET_STATUS.DISCONNECTED,
     error: undefined,
     isReady: true,
-    isPreviewSession: false,
   };
 }
 
@@ -146,7 +138,6 @@ function WalletProviderImpl({
         } satisfies WalletConnectorMetadata,
         kind: isEmbedded ? "embedded" : "external",
         isEmbedded,
-        isPreview: false,
         rawWallet: connectedWallet,
         disconnect: async () => {
           try {
@@ -215,7 +206,7 @@ function WalletProviderImpl({
 
   const signer = useMemo<TransactionSigner | undefined>(() => {
     const rawWallet = wallet?.rawWallet;
-    if (!wallet || wallet.isPreview || !rawWallet) {
+    if (!wallet || !rawWallet) {
       return undefined;
     }
 
@@ -269,49 +260,8 @@ function WalletProviderImpl({
       status,
       error: undefined,
       isReady: providerReady,
-      isPreviewSession: false,
     }),
     [mode, wallets, wallet, signer, status, providerReady]
-  );
-
-  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
-}
-
-function PreviewWalletProviderImpl({ children }: PropsWithChildren) {
-  const { email: previewEmail, signOut: signOutPreview } = usePreviewSession();
-  const previewWallet = useMemo<ManagedWallet | undefined>(() => {
-    if (!previewEmail) {
-      return undefined;
-    }
-
-    return {
-      account: createPreviewWalletAccount(previewEmail),
-      connector: PREVIEW_WALLET_CONNECTOR,
-      kind: "preview",
-      isEmbedded: false,
-      isPreview: true,
-      disconnect: async () => {
-        signOutPreview();
-      },
-    };
-  }, [previewEmail, signOutPreview]);
-
-  const value = useMemo<WalletContextValue>(
-    () => ({
-      mode: "preview",
-      wallets: previewWallet ? [previewWallet] : [],
-      wallet: previewWallet,
-      activeWalletAddress: previewWallet?.account.address,
-      setActiveWalletAddress: () => {
-        /* preview mode is controlled by the email session */
-      },
-      signer: undefined,
-      status: previewWallet ? WALLET_STATUS.CONNECTED : WALLET_STATUS.DISCONNECTED,
-      error: undefined,
-      isReady: true,
-      isPreviewSession: Boolean(previewWallet),
-    }),
-    [previewWallet]
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
@@ -323,10 +273,6 @@ export function WalletProvider({
 }: PropsWithChildren<{ mode?: WalletMode }>) {
   if (mode === "privy") {
     return <WalletProviderImpl mode="privy">{children}</WalletProviderImpl>;
-  }
-
-  if (mode === "preview") {
-    return <PreviewWalletProviderImpl>{children}</PreviewWalletProviderImpl>;
   }
 
   return <WalletFallbackProvider mode={mode}>{children}</WalletFallbackProvider>;

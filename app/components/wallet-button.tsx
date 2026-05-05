@@ -21,14 +21,8 @@ export function WalletButton() {
 }
 
 function PrivyWalletButton() {
-  const {
-    wallet,
-    wallets,
-    status,
-    error,
-    isReady,
-    setActiveWalletAddress,
-  } = useWallet();
+  const { wallet, wallets, status, error, isReady, setActiveWalletAddress } =
+    useWallet();
   const { authenticated } = usePrivy();
   const { login } = useLogin({
     onError: (error) => {
@@ -68,17 +62,18 @@ function PrivyWalletButton() {
     ? "Loading..."
     : status === "connecting"
       ? "Connecting..."
-      : wallet?.connector.name ?? (address ? ellipsify(String(address), 4) : "Sign in");
+      : (wallet?.connector.name ??
+        (address ? ellipsify(String(address), 4) : "Sign in"));
 
   if (!isReady || status !== "connected") {
     return (
-        <button
-          onClick={() => {
-            void login({ loginMethods: ["wallet", "email"] });
-          }}
-          className="cursor-pointer rounded-[var(--radius)] border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
-        >
-          Sign in
+      <button
+        onClick={() => {
+          void login();
+        }}
+        className="cursor-pointer rounded-[var(--radius)] border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
+      >
+        Sign in
       </button>
     );
   }
@@ -96,17 +91,23 @@ function PrivyWalletButton() {
       {isOpen ? (
         <div className="absolute right-0 top-full z-50 mt-2 w-96 rounded-[var(--radius)] border border-border bg-background/95 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.08)] backdrop-blur-sm">
           <div className="mb-4">
-            <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">Balance</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
+              Balance
+            </p>
             <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
               {balance.lamports != null
                 ? lamportsToSolString(balance.lamports)
                 : "\u2014"}{" "}
-              <span className="text-sm font-normal text-oath-muted-text">SOL</span>
+              <span className="text-sm font-normal text-oath-muted-text">
+                SOL
+              </span>
             </p>
           </div>
 
           <div className="mb-4 rounded-[var(--radius)] border border-border bg-muted/60 px-3 py-2">
-            <p className="break-all font-mono text-xs text-foreground">{address}</p>
+            <p className="break-all font-mono text-xs text-foreground">
+              {address}
+            </p>
           </div>
 
           {wallets.length > 1 ? (
@@ -116,11 +117,14 @@ function PrivyWalletButton() {
               </p>
               <div className="space-y-2">
                 {wallets.map((entry) => {
-                  const active = entry.account.address === wallet?.account.address;
+                  const active =
+                    entry.account.address === wallet?.account.address;
                   return (
                     <button
                       key={entry.account.address}
-                      onClick={() => setActiveWalletAddress(entry.account.address)}
+                      onClick={() =>
+                        setActiveWalletAddress(entry.account.address)
+                      }
                       className={`flex w-full items-center justify-between rounded-[var(--radius)] border px-3 py-2 text-left text-sm transition ${
                         active
                           ? "border-oath-gold bg-oath-gold/10 text-foreground"
@@ -178,7 +182,10 @@ function PrivyWalletButton() {
                   try {
                     await wallet.disconnect();
                   } catch (disconnectError) {
-                    console.error("Failed to disconnect wallet", disconnectError);
+                    console.error(
+                      "Failed to disconnect wallet",
+                      disconnectError
+                    );
                   } finally {
                     setIsOpen(false);
                   }
@@ -201,16 +208,25 @@ function PrivyWalletButton() {
   );
 }
 
-function getLoginErrorMessage(error: string) {
-  if (error === "disallowed_login_method") {
+function getLoginErrorMessage(error: unknown) {
+  const code =
+    typeof error === "string"
+      ? error
+      : error instanceof Error
+        ? error.message
+        : typeof error === "object" && error !== null && "code" in error
+          ? String((error as { code?: unknown }).code ?? "")
+          : String(error);
+
+  if (code === "disallowed_login_method") {
     return "Wallet login is disabled for this Privy app. Enable wallet auth in the Privy dashboard.";
   }
 
-  if (error === "allowlist_rejected") {
-    return "This origin is not allowed for the current Privy app. Add your localhost URL in Privy allowed origins or use a dev app client.";
+  if (code === "allowlist_rejected" || code === "invalid_origin") {
+    return "This origin is not allowed for the current Privy app. Add your localhost URL in Privy allowed origins or use the correct app client ID.";
   }
 
-  return "Wallet auth failed. If Privy SIWS is returning 403, enable Solana wallet login and allow this origin in Privy.";
+  return `Wallet auth failed: ${code || "unknown error"}. Check that Solana wallet login is enabled and the current origin is allowlisted in Privy.`;
 }
 
 function MissingPrivyButton() {
