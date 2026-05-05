@@ -34,8 +34,22 @@ function mapCounts(reactions: { type: string }[]) {
 }
 
 async function loadReactionState(proofId: string, walletAddress?: string) {
+  const reactionDelegate = socialPrisma.reaction as
+    | {
+        findMany?: typeof socialPrisma.reaction.findMany;
+        upsert?: typeof socialPrisma.reaction.upsert;
+      }
+    | undefined;
+
+  if (!reactionDelegate?.findMany) {
+    return {
+      counts: emptyCounts(),
+      viewerTypes: [],
+    };
+  }
+
   const [reactions, viewer] = (await Promise.all([
-    socialPrisma.reaction.findMany({
+    reactionDelegate.findMany({
       where: { proofId },
       select: { type: true, userId: true },
     }),
@@ -120,6 +134,19 @@ export async function POST(
     });
   }
 
+  const reactionDelegate = socialPrisma.reaction as
+    | {
+        upsert?: typeof socialPrisma.reaction.upsert;
+      }
+    | undefined;
+
+  if (!reactionDelegate?.upsert) {
+    return NextResponse.json(
+      { ok: false, error: "Reaction support is unavailable" },
+      { status: 503 }
+    );
+  }
+
   const [proof, user] = await Promise.all([
     socialPrisma.proof.findUnique({
       where: { id: proofId },
@@ -137,7 +164,7 @@ export async function POST(
     return NextResponse.json({ ok: false, error: "Proof not found" }, { status: 404 });
   }
 
-  await socialPrisma.reaction.upsert({
+  await reactionDelegate.upsert({
     where: {
       proofId_userId_type: {
         proofId,
