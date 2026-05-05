@@ -42,6 +42,7 @@ model Commitment {
   description         String?
   category            CommitmentCategory
   proofType           ProofType
+  coachTone           CoachTone          @default(SUPPORTIVE_FRIEND)
   stakeAmountLamports BigInt
   slashDestination    SlashDest          @default(TREASURY)
   startDate           DateTime
@@ -195,6 +196,12 @@ enum BeliefStatus {
 enum MessageRole {
   COACH
   USER
+}
+
+enum CoachTone {
+  DRILL_SERGEANT
+  SUPPORTIVE_FRIEND
+  NEUTRAL_ANALYST
 }
 
 enum CoachTrigger {

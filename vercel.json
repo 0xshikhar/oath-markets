@@ -5,6 +5,10 @@
       "schedule": "*/30 * * * *"
     },
     {
+      "path": "/api/cron/daily-coach",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron/resolve-commitments",
       "schedule": "5 0 * * *"
     }

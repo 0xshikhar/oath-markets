@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -210,6 +211,7 @@ export type DashboardView = {
     slug: string;
     title: string;
     messages: Array<{
+      role: "COACH" | "USER";
       content: string;
       createdAtLabel: string;
     }>;
@@ -764,6 +766,9 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
           },
         },
         coachMessages: {
+          where: {
+            role: "COACH",
+          },
           orderBy: { createdAt: "desc" },
           take: 3,
           select: {
@@ -774,7 +779,7 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
         beliefs: {
           select: { id: true },
         },
-      } as any,
+      } as unknown as Prisma.CommitmentSelect,
     })) as DbCommitmentDetailRecord | null;
 
     if (!record) return null;
@@ -854,8 +859,8 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
           select: {
             followers: true,
             following: true,
-          } as any,
-        } as any,
+          },
+        },
         commitments: {
           select: {
             slug: true,
@@ -966,6 +971,99 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
 
       return mapProfileFromFallback(user, commitments);
     });
+  }
+}
+
+type DbCoachInboxMessageRecord = {
+  content: string;
+  createdAt: Date;
+  role: "COACH" | "USER";
+  commitment: {
+    slug: string;
+    title: string;
+    status: string;
+  };
+};
+
+async function loadDbCoachInbox(): Promise<DashboardView["inbox"] | null> {
+  if (!hasDatabaseUrl) {
+    return null;
+  }
+
+  try {
+    const records = (await prisma.coachMessage.findMany({
+      orderBy: [{ createdAt: "desc" }],
+      take: 48,
+      select: {
+        content: true,
+        createdAt: true,
+        role: true,
+        commitment: {
+          select: {
+            slug: true,
+            title: true,
+            status: true,
+          },
+        },
+      },
+    })) as DbCoachInboxMessageRecord[];
+
+    if (records.length === 0) {
+      return [];
+    }
+
+    const threads = new Map<
+      string,
+      {
+        slug: string;
+        title: string;
+        latestAt: number;
+        messages: Array<{
+          role: "COACH" | "USER";
+          content: string;
+          createdAt: Date;
+        }>;
+      }
+    >();
+
+    for (const record of records) {
+      if (record.commitment.status !== "ACTIVE") {
+        continue;
+      }
+
+      const existing = threads.get(record.commitment.slug) ?? {
+        slug: record.commitment.slug,
+        title: record.commitment.title,
+        latestAt: record.createdAt.getTime(),
+        messages: [],
+      };
+
+      existing.latestAt = Math.max(existing.latestAt, record.createdAt.getTime());
+      existing.messages.push({
+        role: record.role,
+        content: record.content,
+        createdAt: record.createdAt,
+      });
+
+      threads.set(existing.slug, existing);
+    }
+
+    return Array.from(threads.values())
+      .sort((a, b) => b.latestAt - a.latestAt)
+      .slice(0, 4)
+      .map((thread) => ({
+        slug: thread.slug,
+        title: thread.title,
+        messages: thread.messages
+          .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+          .map((message) => ({
+            role: message.role,
+            content: message.content,
+            createdAtLabel: formatDateLabel(message.createdAt),
+          })),
+      }));
+  } catch {
+    return null;
   }
 }
 
@@ -1115,36 +1213,46 @@ export async function getDashboardSummary() {
   const active = commitments.filter((commitment) => commitment.status === "ACTIVE");
   const completed = commitments.filter((commitment) => commitment.status === "COMPLETED");
   const failed = commitments.filter((commitment) => commitment.status === "FAILED");
+  const inbox = await loadDbCoachInbox();
 
   return {
     active,
     completed,
     failed,
-    inbox: [
-      {
-        slug: "ship-in-public",
-        title: "Ship one public build note every day for 30 days",
-        messages: [
-          {
-            content: "Your coach checks in at 09:00 local time.",
-            createdAtLabel: "Today",
-          },
-          {
-            content: "Proof submissions update the streak page instantly.",
-            createdAtLabel: "Today",
-          },
-        ],
-      },
-      {
-        slug: "sunrise-5k",
-        title: "Run 5K before sunrise for 21 straight days",
-        messages: [
-          {
-            content: "You are 2 days ahead of the target pace.",
-            createdAtLabel: "Today",
-          },
-        ],
-      },
-    ],
+    inbox:
+      inbox ?? [
+        {
+          slug: "ship-in-public",
+          title: "Ship one public build note every day for 30 days",
+          messages: [
+            {
+              role: "COACH",
+              content: "Your coach checks in at 09:00 local time.",
+              createdAtLabel: "Today",
+            },
+            {
+              role: "USER",
+              content: "Proof landed. Back at 6pm for the next update.",
+              createdAtLabel: "Today",
+            },
+            {
+              role: "COACH",
+              content: "Good. Keep the next proof small and visible.",
+              createdAtLabel: "Today",
+            },
+          ],
+        },
+        {
+          slug: "sunrise-5k",
+          title: "Run 5K before sunrise for 21 straight days",
+          messages: [
+            {
+              role: "COACH",
+              content: "You are 2 days ahead of the target pace.",
+              createdAtLabel: "Today",
+            },
+          ],
+        },
+      ],
   } satisfies DashboardView;
 }
