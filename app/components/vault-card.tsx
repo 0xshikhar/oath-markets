@@ -16,7 +16,7 @@ import { parseTransactionError } from "../lib/errors";
 import { useCluster } from "./cluster-context";
 
 export function VaultCard() {
-  const { wallet, signer, status } = useWallet();
+  const { wallet, signer, status, isPreviewSession } = useWallet();
   const { send, isSending } = useSendTransaction();
   const { getExplorerUrl } = useCluster();
 
@@ -156,6 +156,12 @@ export function VaultCard() {
           <p className="text-sm text-muted">
             Deposit SOL into your personal vault PDA and withdraw anytime.
           </p>
+          {isPreviewSession ? (
+            <p className="text-xs text-muted">
+              Preview mode can inspect the vault, but on-chain actions require a
+              real connected wallet.
+            </p>
+          ) : null}
         </div>
         <span className="rounded-[var(--radius)] bg-cream px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/80">
           {(vaultLamports ?? 0n) > 0n ? "Has funds" : "Empty"}
@@ -219,6 +225,7 @@ export function VaultCard() {
             onClick={handleDeposit}
             disabled={
               isSending ||
+              !signer ||
               !amount ||
               parseFloat(amount) <= 0 ||
               (vaultLamports ?? 0n) > 0n
@@ -238,7 +245,7 @@ export function VaultCard() {
       {/* Withdraw Button */}
       <button
         onClick={handleWithdraw}
-        disabled={isSending || !vaultLamports}
+        disabled={isSending || !vaultLamports || !signer}
         className="w-full rounded-[var(--radius)] border border-border-low bg-card px-4 py-2.5 text-sm font-medium transition hover:bg-cream disabled:opacity-50 disabled:pointer-events-none"
       >
         {isSending ? "Confirming..." : "Withdraw All"}
