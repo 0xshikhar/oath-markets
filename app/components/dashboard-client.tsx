@@ -17,9 +17,15 @@ import { buildProofContentHash, bytesToHex } from "@/lib/proof-hash";
 import {
   getSubmitProofInstructionAsync,
 } from "@/lib/generated/oath";
+import {
+  getOathProgramUnavailableMessage,
+  isOathProgramAvailable,
+} from "@/lib/oath-program";
 import { useWallet } from "../lib/wallet/context";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
+import { useSolanaClient } from "../lib/solana-client-context";
 import type { DashboardView, CommitmentSummary } from "@/lib/oath-data";
+import { useCluster } from "./cluster-context";
 
 type DashboardClientProps = {
   summary: DashboardView;
@@ -28,6 +34,8 @@ type DashboardClientProps = {
 export function DashboardClient({ summary }: DashboardClientProps) {
   const { wallet, signer } = useWallet();
   const { send } = useSendTransaction();
+  const { cluster } = useCluster();
+  const solanaClient = useSolanaClient();
   const router = useRouter();
   const [selectedCommitment, setSelectedCommitment] =
     useState<CommitmentSummary | null>(null);
@@ -110,16 +118,23 @@ export function DashboardClient({ summary }: DashboardClientProps) {
           publicNote: publicNote.trim() || null,
         });
         let onchainTxSig: string | undefined;
+        let fallbackDescription: string | undefined;
 
         if (walletAddress && signer && selectedCommitment.onchainAddress) {
-          const commitmentAccount = selectedCommitment.onchainAddress as Address;
-          const instruction = await getSubmitProofInstructionAsync({
-            maker: signer,
-            commitmentAccount,
-            dayNumber,
-            contentHash,
-          });
-          onchainTxSig = await send({ instructions: [instruction] });
+          const oathProgramAvailable = await isOathProgramAvailable(solanaClient);
+
+          if (oathProgramAvailable) {
+            const commitmentAccount = selectedCommitment.onchainAddress as Address;
+            const instruction = await getSubmitProofInstructionAsync({
+              maker: signer,
+              commitmentAccount,
+              dayNumber,
+              contentHash,
+            });
+            onchainTxSig = await send({ instructions: [instruction] });
+          } else {
+            fallbackDescription = getOathProgramUnavailableMessage(cluster);
+          }
         }
 
         const response = await fetch("/api/proofs", {
@@ -138,7 +153,10 @@ export function DashboardClient({ summary }: DashboardClientProps) {
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.error ?? "Proof failed");
-        toast.success(onchainTxSig ? "Proof submitted on-chain." : "Proof submitted.");
+        toast.success(
+          onchainTxSig ? "Proof submitted on-chain." : "Proof submitted.",
+          fallbackDescription ? { description: fallbackDescription } : undefined
+        );
         resetProofForm();
         router.refresh();
       } catch (error) {

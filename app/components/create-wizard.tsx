@@ -12,8 +12,14 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { normalizeCoachTone } from "@/lib/coach-tone";
+import { useCluster } from "./cluster-context";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
+import { useSolanaClient } from "../lib/solana-client-context";
 import { useWallet } from "../lib/wallet/context";
+import {
+  getOathProgramUnavailableMessage,
+  isOathProgramAvailable,
+} from "@/lib/oath-program";
 import type { CommitmentSummary } from "@/lib/oath-data";
 import {
   SlashDestination,
@@ -101,6 +107,8 @@ const defaultState: WizardState = {
 export function CreateWizard() {
   const router = useRouter();
   const { wallet, signer } = useWallet();
+  const { cluster } = useCluster();
+  const solanaClient = useSolanaClient();
   const { send, isSending } = useSendTransaction();
   const [step, setStep] = useState(0);
   const [isPending, startTransition] = useTransition();
@@ -150,37 +158,47 @@ export function CreateWizard() {
           worldIdVerified: state.worldIdVerified,
         };
 
-        if (walletAddress && signer) {
-          const commitmentId = crypto.getRandomValues(new Uint8Array(32));
-          const totalDays = state.durationDays;
-          const requiredProofDays = state.durationDays;
-          const startTimestamp = Math.floor(Date.now() / 1000);
-          const endTimestamp = startTimestamp + totalDays * 24 * 60 * 60;
-          const stakeLamports = BigInt(Math.round(state.stakeAmountSol * 1_000_000_000));
-          const commitmentAccount = await findCommitmentAccountPda({
-            maker: walletAddress,
-            commitmentId,
-          });
-          const instruction = await getCreateCommitmentInstructionAsync({
-            maker: signer,
-            commitmentId,
-            totalDays,
-            requiredProofDays,
-            startTimestamp,
-            endTimestamp,
-            stakeLamports,
-            slashDestination:
-              {
-                BURN: SlashDestination.Burn,
-                DONATE: SlashDestination.Donate,
-                TREASURY: SlashDestination.Treasury,
-              }[state.slashDestination],
-            isPublic: state.visibility === "PUBLIC",
-          });
-          const signature = await send({ instructions: [instruction] });
+        let fallbackDescription: string | undefined;
 
-          payload.onchainAddress = String(commitmentAccount[0]);
-          payload.onchainTxSig = signature;
+        if (walletAddress && signer) {
+          const oathProgramAvailable = await isOathProgramAvailable(solanaClient);
+
+          if (oathProgramAvailable) {
+            const commitmentId = crypto.getRandomValues(new Uint8Array(32));
+            const totalDays = state.durationDays;
+            const requiredProofDays = state.durationDays;
+            const startTimestamp = Math.floor(Date.now() / 1000);
+            const endTimestamp = startTimestamp + totalDays * 24 * 60 * 60;
+            const stakeLamports = BigInt(
+              Math.round(state.stakeAmountSol * 1_000_000_000)
+            );
+            const commitmentAccount = await findCommitmentAccountPda({
+              maker: walletAddress,
+              commitmentId,
+            });
+            const instruction = await getCreateCommitmentInstructionAsync({
+              maker: signer,
+              commitmentId,
+              totalDays,
+              requiredProofDays,
+              startTimestamp,
+              endTimestamp,
+              stakeLamports,
+              slashDestination:
+                {
+                  BURN: SlashDestination.Burn,
+                  DONATE: SlashDestination.Donate,
+                  TREASURY: SlashDestination.Treasury,
+                }[state.slashDestination],
+              isPublic: state.visibility === "PUBLIC",
+            });
+            const signature = await send({ instructions: [instruction] });
+
+            payload.onchainAddress = String(commitmentAccount[0]);
+            payload.onchainTxSig = signature;
+          } else {
+            fallbackDescription = getOathProgramUnavailableMessage(cluster);
+          }
         }
 
         const response = await fetch("/api/commitments", {
@@ -200,7 +218,10 @@ export function CreateWizard() {
         }
 
         setCreatedCommitment(data.commitment);
-        toast.success("Your oath is live.");
+        toast.success(
+          payload.onchainTxSig ? "Your oath is live on-chain." : "Your oath is live.",
+          fallbackDescription ? { description: fallbackDescription } : undefined
+        );
         router.push(data.commitment.publicUrl);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Creation failed");
@@ -209,8 +230,8 @@ export function CreateWizard() {
   };
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="space-y-4">
+    <section className="grid gap-8 pb-10 sm:pb-14 lg:grid-cols-[1.1fr_0.9fr] lg:pb-16">
+      <div className="space-y-6">
         <div className="flex flex-wrap gap-2">
           {steps.map((label, index) => (
             <Badge
@@ -230,7 +251,7 @@ export function CreateWizard() {
         <Progress value={progress} className="h-2" />
 
         <Card className="border-oath-border bg-card">
-          <CardHeader className="space-y-3">
+          <CardHeader className="space-y-4 pb-4 sm:pb-6">
             <Badge className="w-fit bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
               Step {step + 1}
             </Badge>
@@ -252,7 +273,7 @@ export function CreateWizard() {
             </p>
           </CardHeader>
 
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-6 pb-6 sm:space-y-7 sm:pb-8">
             {step === 0 && (
               <>
                 <Field label="Goal" hint="What are you committing to?">
@@ -463,7 +484,7 @@ export function CreateWizard() {
           </CardContent>
         </Card>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="mt-2 flex flex-wrap gap-3 pb-4 sm:pb-8">
           <Button
             type="button"
             variant="outline"
@@ -488,7 +509,7 @@ export function CreateWizard() {
               disabled={isBusy}
               className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
             >
-                {isBusy ? "Launching..." : "Deploy oath"}
+              {isBusy ? "Launching..." : "Publish oath"}
             </Button>
           )}
         </div>

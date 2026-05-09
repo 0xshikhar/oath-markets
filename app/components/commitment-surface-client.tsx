@@ -17,9 +17,15 @@ import {
   findReputationPda,
   getCoStakeBeliefInstructionAsync,
 } from "@/lib/generated/oath";
+import {
+  getOathProgramUnavailableMessage,
+  isOathProgramAvailable,
+} from "@/lib/oath-program";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
+import { useSolanaClient } from "../lib/solana-client-context";
 import { useWallet } from "../lib/wallet/context";
 import type { CommitmentDetail } from "@/lib/oath-data";
+import { useCluster } from "./cluster-context";
 import { ProofReactionStrip } from "./proof-reaction-strip";
 
 type CommitmentSurfaceClientProps = {
@@ -29,6 +35,8 @@ type CommitmentSurfaceClientProps = {
 export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientProps) {
   const { wallet, signer } = useWallet();
   const router = useRouter();
+  const { cluster } = useCluster();
+  const solanaClient = useSolanaClient();
   const { send } = useSendTransaction();
   const [beliefOpen, setBeliefOpen] = useState(false);
   const [comment, setComment] = useState("");
@@ -43,27 +51,36 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
       setIsBelieving(true);
       let onchainTxSig: string | undefined;
       let onchainAddress: string | undefined;
+      let fallbackDescription: string | undefined;
 
       if (walletAddress && signer && commitment.onchainAddress) {
-        const commitmentAccount = commitment.onchainAddress as Address;
-        const maker = commitment.makerWalletAddress as Address;
-        const believerRecord = await findBelieverRecordPda({
-          commitmentAccount,
-          believerWallet: walletAddress,
-        });
-        const reputation = await findReputationPda({
-          maker,
-        });
-        const instruction = await getCoStakeBeliefInstructionAsync({
-          believerWallet: signer,
-          commitmentAccount,
-          believerRecord: believerRecord[0],
-          reputation: reputation[0],
-          stakeLamports: BigInt(Math.round(Number(beliefAmount || 0.1) * 1_000_000_000)),
-        });
+        const oathProgramAvailable = await isOathProgramAvailable(solanaClient);
 
-        onchainTxSig = await send({ instructions: [instruction] });
-        onchainAddress = believerRecord[0];
+        if (oathProgramAvailable) {
+          const commitmentAccount = commitment.onchainAddress as Address;
+          const maker = commitment.makerWalletAddress as Address;
+          const believerRecord = await findBelieverRecordPda({
+            commitmentAccount,
+            believerWallet: walletAddress,
+          });
+          const reputation = await findReputationPda({
+            maker,
+          });
+          const instruction = await getCoStakeBeliefInstructionAsync({
+            believerWallet: signer,
+            commitmentAccount,
+            believerRecord: believerRecord[0],
+            reputation: reputation[0],
+            stakeLamports: BigInt(
+              Math.round(Number(beliefAmount || 0.1) * 1_000_000_000)
+            ),
+          });
+
+          onchainTxSig = await send({ instructions: [instruction] });
+          onchainAddress = believerRecord[0];
+        } else {
+          fallbackDescription = getOathProgramUnavailableMessage(cluster);
+        }
       }
 
       const response = await fetch("/api/beliefs", {
@@ -79,7 +96,10 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
       });
       const data = await response.json();
       if (!response.ok || !data.ok) throw new Error(data.error ?? "Belief failed");
-      toast.success(onchainTxSig ? "Belief staked on-chain." : "Belief staked.");
+      toast.success(
+        onchainTxSig ? "Belief staked on-chain." : "Belief staked.",
+        fallbackDescription ? { description: fallbackDescription } : undefined
+      );
       setBeliefOpen(false);
       router.refresh();
     } catch (error) {
