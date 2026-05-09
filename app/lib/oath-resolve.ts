@@ -1,5 +1,6 @@
 import { type Address } from "@solana/kit";
 import { findReputationPda, getResolveCommitmentInstructionAsync } from "@/lib/generated/oath";
+import { isOathProgramAvailable } from "@/lib/oath-program";
 import { prisma } from "@/lib/prisma";
 import { createOathAuthorityClient } from "@/lib/oath-server";
 import { getAuthoritySigner } from "@/lib/server-signer";
@@ -81,6 +82,18 @@ export async function resolveCommitmentsOnChain(
 
   const authoritySigner = await getAuthoritySigner();
   const authorityClient = await createOathAuthorityClient();
+  const oathProgramAvailable = await isOathProgramAvailable(authorityClient);
+
+  if (!oathProgramAvailable) {
+    return {
+      ...summary,
+      skipped: commitments.length,
+      errors: commitments.map((commitment) => ({
+        slug: commitment.slug,
+        reason: "OATH program is not deployed on the configured resolver cluster",
+      })),
+    };
+  }
 
   for (const commitment of commitments) {
     if (!isResolvable(commitment)) {

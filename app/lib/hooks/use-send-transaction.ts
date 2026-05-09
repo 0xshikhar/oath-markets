@@ -5,6 +5,7 @@ import { useSWRConfig } from "swr";
 import type { Instruction } from "@solana/kit";
 import { createClient } from "@solana/kit-client-rpc";
 import { useWallet } from "../wallet/context";
+import { parseTransactionError } from "../errors";
 import { useCluster } from "../../components/cluster-context";
 import { getClusterUrl, getClusterWsConfig } from "../solana-client";
 
@@ -35,6 +36,8 @@ export function useSendTransaction() {
         const result = await txClient.sendTransaction([...instructions]);
         mutate((key: unknown) => Array.isArray(key) && key[0] === "balance");
         return result.context.signature;
+      } catch (error) {
+        throw new Error(parseTransactionError(error));
       } finally {
         setIsSending(false);
       }
