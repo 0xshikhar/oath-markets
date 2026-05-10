@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { coachToneLabel } from "@/lib/coach-tone";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LAMPORTS_PER_SOL = 1_000_000_000n;
@@ -22,6 +23,7 @@ type CommitmentRecord = {
   description: string | null;
   category: string;
   proofType: string;
+  coachTone: string;
   stakeAmountLamports: bigint;
   startDate: Date;
   endDate: Date;
@@ -41,6 +43,7 @@ type CommitmentRecord = {
 };
 
 type ProofRecord = {
+  id: string;
   dayNumber: number;
   textContent: string | null;
   imageUrl: string | null;
@@ -76,6 +79,7 @@ type DbCommitmentSummaryRecord = {
   description: string | null;
   category: string;
   proofType: string;
+  coachTone: string;
   stakeAmountLamports: bigint;
   startDate: Date;
   endDate: Date;
@@ -97,7 +101,7 @@ type DbProofRecord = {
   linkUrl: string | null;
   publicNote: string | null;
   createdAt: Date;
-  reactions: { type: string }[];
+  reactionCounts?: ReactionCounts;
 };
 
 type DbCommentRecord = {
@@ -137,6 +141,8 @@ export type CommitmentSummary = {
   description: string;
   category: string;
   proofType: string;
+  coachTone: string;
+  coachToneLabel: string;
   makerName: string;
   makerHandle: string;
   makerWalletAddress: string;
@@ -218,199 +224,6 @@ export type DashboardView = {
   }>;
 };
 
-const sampleUsers: UserRecord[] = [
-  {
-    walletAddress: "9xF3J1mN4qT8pW2yR5bH7cK6dL8vN3sA1eR6tG2uM9Q4",
-    username: "noah.builds",
-    bio: "Public shipping, no excuses, no hiding.",
-    avatarUrl: null,
-    worldIdVerified: true,
-    notifyTime: "09:00",
-    timezone: "Asia/Kolkata",
-  },
-  {
-    walletAddress: "4nV8bR2sK5mD7pQ1wA6tY9uH3cF8gL2zN4jP6rE1xT5",
-    username: "maya.run",
-    bio: "Runs, reads, and proof posts before breakfast.",
-    avatarUrl: null,
-    worldIdVerified: true,
-    notifyTime: "07:30",
-    timezone: "America/Los_Angeles",
-  },
-  {
-    walletAddress: "7qC2dK9vH4mT8xN1pR6sY3bF5wL8aG2jM4uE9tQ6zV1",
-    username: "saanvi.ships",
-    bio: "Daily build logs and public accountability.",
-    avatarUrl: null,
-    worldIdVerified: false,
-    notifyTime: "21:00",
-    timezone: "Asia/Kolkata",
-  },
-];
-
-const sampleCommitments: CommitmentRecord[] = [
-  {
-    slug: "ship-in-public",
-    title: "Ship one public build note every day for 30 days",
-    description:
-      "Short proof, one screenshot, one sentence about the thing that moved forward. No hiding behind private progress.",
-    category: "WORK",
-    proofType: "TEXT",
-    stakeAmountLamports: 1_000_000_000n,
-    startDate: new Date("2026-04-01T00:00:00.000Z"),
-    endDate: new Date("2026-05-01T00:00:00.000Z"),
-    totalDays: 30,
-    requiredProofDays: 30,
-    status: "ACTIVE",
-    isPublic: true,
-    proofCount: 18,
-    completionRatio: 0.6,
-    resolvedAt: null,
-    createdAt: new Date("2026-03-27T00:00:00.000Z"),
-    maker: sampleUsers[0],
-    believerCount: 14,
-    proofSamples: [
-      {
-        dayNumber: 18,
-        textContent:
-          "Reworked the pricing card and finally cut the copy down to one sentence.",
-        imageUrl:
-          "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80",
-        linkUrl: null,
-        publicNote: "The public page is finally feeling like a product.",
-        createdAt: new Date("2026-04-28T18:00:00.000Z"),
-      },
-      {
-        dayNumber: 17,
-        textContent: "Moved the dashboard logic into a server component.",
-        imageUrl: null,
-        linkUrl: null,
-        publicNote: "Less client state, more shipping.",
-        createdAt: new Date("2026-04-27T18:00:00.000Z"),
-      },
-    ],
-    comments: [
-      {
-        authorName: "maya.run",
-        content: "This is the kind of public pressure that actually works.",
-        createdAt: new Date("2026-04-28T20:00:00.000Z"),
-      },
-      {
-        authorName: "saanvi.ships",
-        content: "Watching the streak move is more motivating than any task app.",
-        createdAt: new Date("2026-04-29T08:30:00.000Z"),
-      },
-    ],
-    coachMessages: [
-      {
-        content:
-          "Day 18 is in range. Keep the proof small and finish before the window closes.",
-        createdAt: new Date("2026-04-28T09:00:00.000Z"),
-      },
-    ],
-  },
-  {
-    slug: "sunrise-5k",
-    title: "Run 5K before sunrise for 21 straight days",
-    description:
-      "A public fitness commitment with proof photos, route screenshots, and a streak page that tracks every morning run.",
-    category: "FITNESS",
-    proofType: "PHOTO",
-    stakeAmountLamports: 500_000_000n,
-    startDate: new Date("2026-04-10T00:00:00.000Z"),
-    endDate: new Date("2026-04-30T00:00:00.000Z"),
-    totalDays: 21,
-    requiredProofDays: 21,
-    status: "ACTIVE",
-    isPublic: true,
-    proofCount: 11,
-    completionRatio: 0.52,
-    resolvedAt: null,
-    createdAt: new Date("2026-04-09T00:00:00.000Z"),
-    maker: sampleUsers[1],
-    believerCount: 9,
-    proofSamples: [
-      {
-        dayNumber: 11,
-        textContent: "Felt heavy at first, but the last kilometer clicked.",
-        imageUrl:
-          "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80",
-        linkUrl: null,
-        publicNote: "Still alive, still on pace.",
-        createdAt: new Date("2026-04-29T11:15:00.000Z"),
-      },
-    ],
-    comments: [
-      {
-        authorName: "noah.builds",
-        content: "The public log makes the early alarm feel real.",
-        createdAt: new Date("2026-04-29T12:00:00.000Z"),
-      },
-    ],
-    coachMessages: [
-      {
-        content: "Your pace is on track. Protect the streak by keeping the proof simple.",
-        createdAt: new Date("2026-04-29T06:30:00.000Z"),
-      },
-    ],
-  },
-  {
-    slug: "learn-anchor",
-    title: "Read one Anchor and Solana chapter every day for 60 days",
-    description:
-      "A learning oath that pairs reading with public notes, code snippets, and a reputation score that keeps the pressure alive.",
-    category: "LEARNING",
-    proofType: "LINK",
-    stakeAmountLamports: 2_000_000_000n,
-    startDate: new Date("2026-03-01T00:00:00.000Z"),
-    endDate: new Date("2026-04-30T00:00:00.000Z"),
-    totalDays: 60,
-    requiredProofDays: 60,
-    status: "ACTIVE",
-    isPublic: true,
-    proofCount: 42,
-    completionRatio: 0.7,
-    resolvedAt: null,
-    createdAt: new Date("2026-02-28T00:00:00.000Z"),
-    maker: sampleUsers[2],
-    believerCount: 18,
-    proofSamples: [
-      {
-        dayNumber: 42,
-        textContent:
-          "Finished the escrow section and traced the account flow end-to-end.",
-        imageUrl: null,
-        linkUrl: "https://solana.com/docs",
-        publicNote: "The notes are doing the heavy lifting now.",
-        createdAt: new Date("2026-04-29T07:45:00.000Z"),
-      },
-      {
-        dayNumber: 41,
-        textContent:
-          "Mapped the instruction accounts before touching the code. Less guessing, more clarity.",
-        imageUrl: null,
-        linkUrl: "https://www.anchor-lang.com/docs",
-        publicNote: null,
-        createdAt: new Date("2026-04-28T07:45:00.000Z"),
-      },
-    ],
-    comments: [
-      {
-        authorName: "maya.run",
-        content: "This would have saved me a week the first time I touched Anchor.",
-        createdAt: new Date("2026-04-29T09:00:00.000Z"),
-      },
-    ],
-    coachMessages: [
-      {
-        content:
-          "You are above the required pace. Keep the proof format compact so the streak stays effortless.",
-        createdAt: new Date("2026-04-29T08:00:00.000Z"),
-      },
-    ],
-  },
-];
-
 function ellipsify(value: string, visible = 4) {
   if (value.length <= visible * 2 + 3) return value;
   return `${value.slice(0, visible)}...${value.slice(-visible)}`;
@@ -459,21 +272,6 @@ function emptyReactionCounts(): ReactionCounts {
   };
 }
 
-function mapReactionCounts(reactions: { type: string }[]): ReactionCounts {
-  const counts = emptyReactionCounts();
-
-  for (const reaction of reactions) {
-    const type = reaction.type.toLowerCase();
-    if (type === "momentum") counts.momentum += 1;
-    if (type === "streak") counts.streak += 1;
-    if (type === "watching") counts.watching += 1;
-    if (type === "doubt") counts.doubt += 1;
-    counts.total += 1;
-  }
-
-  return counts;
-}
-
 function toHandle(user: UserRecord) {
   return user.username ? `@${user.username}` : ellipsify(user.walletAddress, 4);
 }
@@ -508,6 +306,8 @@ function mapCommitment(commitment: CommitmentRecord): CommitmentSummary {
     description: commitment.description ?? "",
     category: commitment.category,
     proofType: commitment.proofType,
+    coachTone: commitment.coachTone,
+    coachToneLabel: coachToneLabel(commitment.coachTone),
     makerName: getDisplayName(commitment.maker),
     makerHandle: toHandle(commitment.maker),
     makerWalletAddress: commitment.maker.walletAddress,
@@ -537,7 +337,7 @@ function mapCommitmentDetail(commitment: CommitmentRecord): CommitmentDetail {
     )}%`,
     startDateLabel: formatLongDateLabel(commitment.startDate),
     proofSamples: commitment.proofSamples.map((proof) => ({
-      id: `${commitment.slug}-${proof.dayNumber}`,
+      id: proof.id,
       dayNumber: proof.dayNumber,
       textContent: proof.textContent ?? "",
       imageUrl: proof.imageUrl,
@@ -618,11 +418,11 @@ function filterExploreCommitments(
 
 async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
   if (!hasDatabaseUrl) {
-    return sampleCommitments.map(mapCommitment).slice(0, limit);
+    return [];
   }
 
   try {
-    const commitments = await prisma.commitment.findMany({
+    const commitments = (await prisma.commitment.findMany({
       where: { isPublic: true },
       orderBy: [{ proofCount: "desc" }, { createdAt: "desc" }],
       take: limit,
@@ -633,6 +433,7 @@ async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
         description: true,
         category: true,
         proofType: true,
+        coachTone: true,
         stakeAmountLamports: true,
         startDate: true,
         endDate: true,
@@ -657,9 +458,9 @@ async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
           select: { id: true },
         },
       },
-    });
+    })) as DbCommitmentSummaryRecord[];
 
-    if (commitments.length === 0) return sampleCommitments.map(mapCommitment);
+    if (commitments.length === 0) return [];
 
     return commitments.map((record: DbCommitmentSummaryRecord) =>
       mapCommitment({
@@ -669,6 +470,7 @@ async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
         description: record.description,
         category: record.category,
         proofType: record.proofType,
+        coachTone: record.coachTone,
         stakeAmountLamports: record.stakeAmountLamports,
         startDate: record.startDate,
         endDate: record.endDate,
@@ -687,8 +489,9 @@ async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
         coachMessages: [],
       })
     );
-  } catch {
-    return sampleCommitments.map(mapCommitment);
+  } catch (error) {
+    console.error("Failed to load commitments", error);
+    return [];
   }
 }
 
@@ -698,10 +501,7 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
   }
 
   if (!hasDatabaseUrl) {
-    const fallback =
-      sampleCommitments.find((commitment) => commitment.slug === slug) ??
-      sampleCommitments[0];
-    return mapCommitmentDetail(fallback);
+    return null;
   }
 
   try {
@@ -714,6 +514,7 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
         description: true,
         category: true,
         proofType: true,
+        coachTone: true,
         stakeAmountLamports: true,
         startDate: true,
         endDate: true,
@@ -745,11 +546,6 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
             linkUrl: true,
             publicNote: true,
             createdAt: true,
-            reactions: {
-              select: {
-                type: true,
-              },
-            },
           },
         },
         comments: {
@@ -791,6 +587,7 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
       description: record.description,
       category: record.category,
       proofType: record.proofType,
+      coachTone: record.coachTone,
       stakeAmountLamports: record.stakeAmountLamports,
       startDate: record.startDate,
       endDate: record.endDate,
@@ -812,7 +609,7 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
         linkUrl: proof.linkUrl,
         publicNote: proof.publicNote,
         createdAt: proof.createdAt,
-        reactionCounts: mapReactionCounts(proof.reactions),
+        reactionCounts: emptyReactionCounts(),
       })),
       comments: record.comments.map((comment) => ({
         authorName:
@@ -825,23 +622,15 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
         createdAt: message.createdAt,
       })),
     });
-  } catch {
-    const fallback =
-      sampleCommitments.find((commitment) => commitment.slug === slug) ??
-      sampleCommitments[0];
-    return mapCommitmentDetail(fallback);
+  } catch (error) {
+    console.error(`Failed to load commitment ${slug}`, error);
+    return null;
   }
 }
 
 async function loadDbProfiles(): Promise<ProfileView[]> {
   if (!hasDatabaseUrl) {
-    return sampleUsers.map((user) => {
-      const commitments = sampleCommitments.filter(
-        (commitment) => commitment.maker.walletAddress === user.walletAddress
-      );
-
-      return mapProfileFromFallback(user, commitments);
-    });
+    return [];
   }
 
   try {
@@ -868,6 +657,7 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
             description: true,
             category: true,
             proofType: true,
+            coachTone: true,
             stakeAmountLamports: true,
             startDate: true,
             endDate: true,
@@ -893,13 +683,7 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
     })) as unknown as DbUserProfileRecord[];
 
     if (users.length === 0) {
-      return sampleUsers.map((user) => {
-        const commitments = sampleCommitments.filter(
-          (commitment) => commitment.maker.walletAddress === user.walletAddress
-        );
-
-        return mapProfileFromFallback(user, commitments);
-      });
+      return [];
     }
 
     return users.map((user) => {
@@ -910,6 +694,7 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
           description: commitment.description,
           category: commitment.category,
           proofType: commitment.proofType,
+          coachTone: commitment.coachTone,
           stakeAmountLamports: commitment.stakeAmountLamports,
           startDate: commitment.startDate,
           endDate: commitment.endDate,
@@ -963,14 +748,9 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
         commitments,
       } satisfies ProfileView;
     });
-  } catch {
-    return sampleUsers.map((user) => {
-      const commitments = sampleCommitments.filter(
-        (commitment) => commitment.maker.walletAddress === user.walletAddress
-      );
-
-      return mapProfileFromFallback(user, commitments);
-    });
+  } catch (error) {
+    console.error("Failed to load profiles", error);
+    return [];
   }
 }
 
@@ -987,7 +767,7 @@ type DbCoachInboxMessageRecord = {
 
 async function loadDbCoachInbox(): Promise<DashboardView["inbox"] | null> {
   if (!hasDatabaseUrl) {
-    return null;
+    return [];
   }
 
   try {
@@ -1062,66 +842,19 @@ async function loadDbCoachInbox(): Promise<DashboardView["inbox"] | null> {
             createdAtLabel: formatDateLabel(message.createdAt),
           })),
       }));
-  } catch {
-    return null;
+  } catch (error) {
+    console.error("Failed to load coach inbox", error);
+    return [];
   }
-}
-
-function mapProfileFromFallback(
-  user: UserRecord,
-  commitments: CommitmentRecord[]
-): ProfileView {
-  return {
-    displayName: getDisplayName(user),
-    handle: toHandle(user),
-    walletAddress: user.walletAddress,
-    bio: user.bio ?? "No bio yet.",
-    verified: user.worldIdVerified,
-    timezone: user.timezone,
-    notifyTime: user.notifyTime,
-    followerCount: 0,
-    followingCount: 0,
-    reputationScore: formatCompactNumber(
-      commitments.filter((commitment) => commitment.status === "COMPLETED")
-        .length * 120 +
-        commitments.reduce((sum, commitment) => sum + commitment.believerCount, 0) *
-          6 +
-        (user.worldIdVerified ? 75 : 0)
-    ),
-    completedCount: commitments.filter(
-      (commitment) => commitment.status === "COMPLETED"
-    ).length,
-    activeCount: commitments.filter((commitment) => commitment.status === "ACTIVE")
-      .length,
-    totalStakeLabel: `${formatSol(
-      commitments.reduce(
-        (sum, commitment) => sum + commitment.stakeAmountLamports,
-        0n
-      )
-    )} SOL`,
-    commitments: commitments.map(mapCommitment),
-  };
 }
 
 export async function getLandingStats(): Promise<LandingStats> {
   if (!hasDatabaseUrl) {
-    const activeOaths = sampleCommitments.filter(
-      (commitment) => commitment.status === "ACTIVE"
-    ).length;
-    const believers = sampleCommitments.reduce(
-      (sum, commitment) => sum + commitment.believerCount,
-      0
-    );
-    const totalStakeLamports = sampleCommitments.reduce(
-      (sum, commitment) => sum + commitment.stakeAmountLamports,
-      0n
-    );
-
     return {
-      activeOaths,
-      totalStakeLabel: `${formatSol(totalStakeLamports)} SOL`,
-      believers,
-      completionRateLabel: "68%",
+      activeOaths: 0,
+      totalStakeLabel: "0 SOL",
+      believers: 0,
+      completionRateLabel: "0%",
     };
   }
 
@@ -1138,32 +871,19 @@ export async function getLandingStats(): Promise<LandingStats> {
       }),
     ]);
 
-    if (activeOaths === 0 && believers === 0) {
-      throw new Error("Fallback to seeded preview data");
-    }
-
     return {
       activeOaths,
       totalStakeLabel: `${formatSol(stakes._sum.stakeAmountLamports ?? 0n)} SOL`,
       believers,
       completionRateLabel: `${Math.round((completed / Math.max(activeOaths, 1)) * 100)}%`,
     };
-  } catch {
+  } catch (error) {
+    console.error("Failed to load landing stats", error);
     return {
-      activeOaths: sampleCommitments.filter(
-        (commitment) => commitment.status === "ACTIVE"
-      ).length,
-      totalStakeLabel: `${formatSol(
-        sampleCommitments.reduce(
-          (sum, commitment) => sum + commitment.stakeAmountLamports,
-          0n
-        )
-      )} SOL`,
-      believers: sampleCommitments.reduce(
-        (sum, commitment) => sum + commitment.believerCount,
-        0
-      ),
-      completionRateLabel: "68%",
+      activeOaths: 0,
+      totalStakeLabel: "0 SOL",
+      believers: 0,
+      completionRateLabel: "0%",
     };
   }
 }
@@ -1183,9 +903,7 @@ export async function getExploreCommitments(
 
 export async function getCommitmentBySlug(slug?: string) {
   const commitment = await loadDbCommitment(slug);
-  if (commitment) return commitment;
-
-  return mapCommitmentDetail(sampleCommitments[0]);
+  return commitment;
 }
 
 export async function getProfileByWallet(identifier?: string) {
@@ -1193,7 +911,7 @@ export async function getProfileByWallet(identifier?: string) {
   const normalized = identifier?.trim().toLowerCase();
 
   if (!normalized) {
-    return profiles[0];
+    return profiles[0] ?? null;
   }
 
   const profile = profiles.find(
@@ -1205,7 +923,7 @@ export async function getProfileByWallet(identifier?: string) {
 
   if (profile) return profile;
 
-  return profiles[0];
+  return null;
 }
 
 export async function getDashboardSummary() {
@@ -1219,40 +937,6 @@ export async function getDashboardSummary() {
     active,
     completed,
     failed,
-    inbox:
-      inbox ?? [
-        {
-          slug: "ship-in-public",
-          title: "Ship one public build note every day for 30 days",
-          messages: [
-            {
-              role: "COACH",
-              content: "Your coach checks in at 09:00 local time.",
-              createdAtLabel: "Today",
-            },
-            {
-              role: "USER",
-              content: "Proof landed. Back at 6pm for the next update.",
-              createdAtLabel: "Today",
-            },
-            {
-              role: "COACH",
-              content: "Good. Keep the next proof small and visible.",
-              createdAtLabel: "Today",
-            },
-          ],
-        },
-        {
-          slug: "sunrise-5k",
-          title: "Run 5K before sunrise for 21 straight days",
-          messages: [
-            {
-              role: "COACH",
-              content: "You are 2 days ahead of the target pace.",
-              createdAtLabel: "Today",
-            },
-          ],
-        },
-      ],
+    inbox: inbox ?? [],
   } satisfies DashboardView;
 }
