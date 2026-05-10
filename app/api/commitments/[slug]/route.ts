@@ -8,6 +8,7 @@ export async function GET(
   const { slug } = await params;
   const url = new URL(request.url);
   const walletAddress = url.searchParams.get("walletAddress")?.trim() ?? undefined;
+  const accessToken = url.searchParams.get("accessToken")?.trim() ?? undefined;
 
   if (!process.env.DATABASE_URL?.trim()) {
     return NextResponse.json(
@@ -16,7 +17,7 @@ export async function GET(
     );
   }
 
-  const commitment = await getCommitmentBySlug(slug, walletAddress);
+  const commitment = await getCommitmentBySlug(slug, walletAddress, accessToken);
 
   if (!commitment) {
     return NextResponse.json({ ok: false, error: "Commitment not found" }, { status: 404 });

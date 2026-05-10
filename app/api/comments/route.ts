@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { canViewCommitment } from "@/lib/oath-access";
+import { canWriteCommitment } from "@/lib/oath-access";
+import { verifyPrivateShareToken } from "@/lib/private-share";
 
 type CommentInput = {
   commitmentSlug?: string;
   walletAddress?: string;
   content?: string;
   parentCommentId?: string;
+  accessToken?: string;
 };
 
 type CommentAccessRecord = {
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
   const walletAddress = body.walletAddress?.trim();
   const content = body.content?.trim();
   const parentCommentId = body.parentCommentId?.trim();
+  const accessToken = body.accessToken?.trim();
 
   if (!slug || !walletAddress || !content) {
     return NextResponse.json(
@@ -64,12 +67,19 @@ export async function POST(request: Request) {
   }
 
   if (
-    !canViewCommitment(
+    !canWriteCommitment(
       {
         isPublic: commitment.isPublic,
         makerWalletAddress: commitment.maker.walletAddress,
       },
-      walletAddress
+      walletAddress,
+      Boolean(
+        accessToken &&
+          verifyPrivateShareToken(accessToken, {
+            slug,
+            makerWalletAddress: commitment.maker.walletAddress,
+          })
+      )
     )
   ) {
     return NextResponse.json({ ok: false, error: "Commitment not found" }, { status: 404 });

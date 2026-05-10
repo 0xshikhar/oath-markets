@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCommitmentBySlug } from "@/lib/oath-data";
 import { normalizeCoachTone } from "@/lib/coach-tone";
+import { buildPrivateShareUrl, createPrivateShareToken } from "@/lib/private-share";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -131,9 +132,21 @@ export async function POST(request: Request) {
       throw new Error("Failed to load created commitment");
     }
 
+    const shareUrl = createdCommitment.isPublic
+      ? null
+      : buildPrivateShareUrl(
+          new URL(request.url).origin,
+          commitment.slug,
+          createPrivateShareToken({
+            slug: commitment.slug,
+            makerWalletAddress,
+          })
+        );
+
     return NextResponse.json({
       ok: true,
       commitment: createdCommitment,
+      privateShareUrl: shareUrl,
     });
   } catch (error) {
     console.error("Failed to create commitment", error);
