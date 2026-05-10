@@ -16,10 +16,33 @@ pub use state::*;
 
 declare_id!("CHyHVL8HzWw3VaZarPUuU2DNf5xJm3CkrrWz6GgYstBJ");
 
-pub const OATH_AUTHORITY: Pubkey = pubkey!("nmc44fEy5g34tCgzeNKECSFCaaNSckzfSLu9YfZv3bs");
+// MVP authority for resolver cron and treasury routing.
+// Keep this aligned with the deployed server signer keypair.
+pub const OATH_AUTHORITY: Pubkey = pubkey!("vyH9abSgs8NypgbgotZ2jJzyReqHz8ntUiHnu7r2HRq");
 pub const MIN_STAKE_LAMPORTS: u64 = 100_000_000;
 pub const MIN_BELIEF_STAKE_LAMPORTS: u64 = 50_000_000;
 pub const PROOF_GRACE_PERIOD_SECONDS: i64 = 86_400;
+
+fn transfer_lamports(from: &AccountInfo<'_>, to: &AccountInfo<'_>, amount: u64) -> Result<()> {
+    if amount == 0 {
+        return Ok(());
+    }
+
+    let from_balance = from.lamports();
+    require!(from_balance >= amount, OathError::InsufficientVaultBalance);
+
+    let to_balance = to
+        .lamports()
+        .checked_add(amount)
+        .ok_or(OathError::ArithmeticOverflow)?;
+
+    **from.try_borrow_mut_lamports()? = from_balance
+        .checked_sub(amount)
+        .ok_or(OathError::ArithmeticOverflow)?;
+    **to.try_borrow_mut_lamports()? = to_balance;
+
+    Ok(())
+}
 
 #[program]
 pub mod oath {
@@ -225,41 +248,17 @@ pub fn co_stake_belief(ctx: Context<CoStakeBelief>, stake_lamports: u64) -> Resu
             .ok_or(OathError::ArithmeticOverflow)?;
         require!(vault_balance >= required_outflow, OathError::InsufficientVaultBalance);
 
-        let vault_bump = ctx.accounts.vault.bump;
-        let commitment_key = commitment.key();
-        let vault_seeds: &[&[&[u8]]] = &[&[
-            b"vault",
-            commitment_key.as_ref(),
-            &[vault_bump],
-        ]];
+        transfer_lamports(
+            &ctx.accounts.vault.to_account_info(),
+            &ctx.accounts.maker.to_account_info(),
+            breakdown.maker_refund,
+        )?;
 
-        if breakdown.maker_refund > 0 {
-            transfer(
-                CpiContext::new_with_signer(
-                    ctx.accounts.system_program.to_account_info(),
-                    Transfer {
-                        from: ctx.accounts.vault.to_account_info(),
-                        to: ctx.accounts.maker.to_account_info(),
-                    },
-                    vault_seeds,
-                ),
-                breakdown.maker_refund,
-            )?;
-        }
-
-        if breakdown.slash_amount > 0 {
-            transfer(
-                CpiContext::new_with_signer(
-                    ctx.accounts.system_program.to_account_info(),
-                    Transfer {
-                        from: ctx.accounts.vault.to_account_info(),
-                        to: ctx.accounts.treasury.to_account_info(),
-                    },
-                    vault_seeds,
-                ),
-                breakdown.slash_amount,
-            )?;
-        }
+        transfer_lamports(
+            &ctx.accounts.vault.to_account_info(),
+            &ctx.accounts.treasury.to_account_info(),
+            breakdown.slash_amount,
+        )?;
 
         commitment.faith_fee_pool_lamports = breakdown.faith_fee_pool;
         commitment.resolved_at = now;
@@ -347,23 +346,9 @@ pub fn co_stake_belief(ctx: Context<CoStakeBelief>, stake_lamports: u64) -> Resu
 
         require!(vault_balance >= payout, OathError::InsufficientVaultBalance);
 
-        let vault_bump = ctx.accounts.vault.bump;
-        let commitment_key = commitment.key();
-        let vault_seeds: &[&[&[u8]]] = &[&[
-            b"vault",
-            commitment_key.as_ref(),
-            &[vault_bump],
-        ]];
-
-        transfer(
-            CpiContext::new_with_signer(
-                ctx.accounts.system_program.to_account_info(),
-                Transfer {
-                    from: ctx.accounts.vault.to_account_info(),
-                    to: ctx.accounts.believer_wallet.to_account_info(),
-                },
-                vault_seeds,
-            ),
+        transfer_lamports(
+            &ctx.accounts.vault.to_account_info(),
+            &ctx.accounts.believer_wallet.to_account_info(),
             payout,
         )?;
 
@@ -497,7 +482,7 @@ pub struct ResolveCommitment<'info> {
         bump = vault.bump,
     )]
     pub vault: Account<'info, EscrowVault>,
-    #[account(mut)]
+    #[account(mut, address = commitment_account.maker)]
     pub maker: SystemAccount<'info>,
     #[account(
         mut,
