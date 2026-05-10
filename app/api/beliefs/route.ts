@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCommitmentBySlug } from "@/lib/oath-data";
+import { canViewCommitment } from "@/lib/oath-access";
 
 type BeliefInput = {
   commitmentSlug?: string;
@@ -8,6 +9,14 @@ type BeliefInput = {
   stakeAmountSol?: number;
   onchainAddress?: string;
   onchainTxSig?: string;
+};
+
+type BeliefAccessRecord = {
+  id: string;
+  isPublic: boolean;
+  maker: {
+    walletAddress: string;
+  };
 };
 
 export async function POST(request: Request) {
@@ -35,8 +44,31 @@ export async function POST(request: Request) {
     );
   }
 
-  const commitment = await prisma.commitment.findUnique({ where: { slug } });
+  const commitment = (await prisma.commitment.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      isPublic: true,
+      maker: {
+        select: {
+          walletAddress: true,
+        },
+      },
+    },
+  })) as BeliefAccessRecord | null;
   if (!commitment) {
+    return NextResponse.json({ ok: false, error: "Commitment not found" }, { status: 404 });
+  }
+
+  if (
+    !canViewCommitment(
+      {
+        isPublic: commitment.isPublic,
+        makerWalletAddress: commitment.maker.walletAddress,
+      },
+      walletAddress
+    )
+  ) {
     return NextResponse.json({ ok: false, error: "Commitment not found" }, { status: 404 });
   }
 
@@ -58,7 +90,7 @@ export async function POST(request: Request) {
     },
   });
 
-  const updatedCommitment = await getCommitmentBySlug(slug);
+  const updatedCommitment = await getCommitmentBySlug(slug, walletAddress);
   if (!updatedCommitment) {
     return NextResponse.json(
       { ok: false, error: "Failed to load updated commitment" },

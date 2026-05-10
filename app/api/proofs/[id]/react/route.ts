@@ -1,13 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { canViewCommitment } from "@/lib/oath-access";
 
-const socialPrisma = prisma as any;
+type SocialPrismaClient = typeof prisma & {
+  reaction: NonNullable<typeof prisma.reaction> & {
+    deleteMany: (...args: unknown[]) => Promise<unknown>;
+  };
+  proof: NonNullable<typeof prisma.proof>;
+  user: NonNullable<typeof prisma.user>;
+};
+
+const socialPrisma = prisma as SocialPrismaClient;
 
 const validTypes = ["MOMENTUM", "STREAK", "WATCHING", "DOUBT"] as const;
+type ReactionType = (typeof validTypes)[number];
 
 type ReactionInput = {
   walletAddress?: string;
-  type?: (typeof validTypes)[number];
+  type?: ReactionType;
+};
+
+type ProofAccessRecord = {
+  id: string;
+  commitment: {
+    slug: string;
+    isPublic: boolean;
+    maker: {
+      walletAddress: string;
+    };
+  };
+};
+
+type ReactionRow = {
+  type: ReactionType;
+  userId: string;
 };
 
 function emptyCounts() {
@@ -34,22 +60,15 @@ function mapCounts(reactions: { type: string }[]) {
 }
 
 async function loadReactionState(proofId: string, walletAddress?: string) {
-  const reactionDelegate = socialPrisma.reaction as
-    | {
-        findMany?: typeof socialPrisma.reaction.findMany;
-        upsert?: typeof socialPrisma.reaction.upsert;
-      }
-    | undefined;
-
-  if (!reactionDelegate?.findMany) {
+  if (typeof socialPrisma.reaction.findMany !== "function") {
     return {
       counts: emptyCounts(),
-      viewerTypes: [],
+      viewerTypes: [] as ReactionType[],
     };
   }
 
   const [reactions, viewer] = (await Promise.all([
-    reactionDelegate.findMany({
+    socialPrisma.reaction.findMany({
       where: { proofId },
       select: { type: true, userId: true },
     }),
@@ -59,17 +78,36 @@ async function loadReactionState(proofId: string, walletAddress?: string) {
           select: { id: true },
         })
       : Promise.resolve(null),
-  ])) as [
-    Array<{ type: string; userId: string }>,
-    { id: string } | null,
-  ];
+  ])) as [ReactionRow[], { id: string } | null];
 
   return {
     counts: mapCounts(reactions),
     viewerTypes: viewer
       ? reactions.filter((reaction) => reaction.userId === viewer.id).map((reaction) => reaction.type)
-      : [],
+      : ([] as ReactionType[]),
   };
+}
+
+async function loadProofAccess(proofId: string): Promise<ProofAccessRecord | null> {
+  const proof = (await socialPrisma.proof.findUnique({
+    where: { id: proofId },
+    select: {
+      id: true,
+      commitment: {
+        select: {
+          slug: true,
+          isPublic: true,
+          maker: {
+            select: {
+              walletAddress: true,
+            },
+          },
+        },
+      },
+    },
+  })) as ProofAccessRecord | null;
+
+  return proof;
 }
 
 export async function GET(
@@ -88,12 +126,18 @@ export async function GET(
     });
   }
 
-  const proof = await socialPrisma.proof.findUnique({
-    where: { id },
-    select: { id: true },
-  });
+  const proof = await loadProofAccess(id);
 
-  if (!proof) {
+  if (
+    !proof ||
+    !canViewCommitment(
+      {
+        isPublic: proof.commitment.isPublic,
+        makerWalletAddress: proof.commitment.maker.walletAddress,
+      },
+      walletAddress
+    )
+  ) {
     return NextResponse.json({ ok: false, error: "Proof not found" }, { status: 404 });
   }
 
@@ -134,37 +178,36 @@ export async function POST(
     });
   }
 
-  const reactionDelegate = socialPrisma.reaction as
-    | {
-        upsert?: typeof socialPrisma.reaction.upsert;
-      }
-    | undefined;
-
-  if (!reactionDelegate?.upsert) {
+  if (typeof socialPrisma.reaction.upsert !== "function") {
     return NextResponse.json(
       { ok: false, error: "Reaction support is unavailable" },
       { status: 503 }
     );
   }
 
-  const [proof, user] = await Promise.all([
-    socialPrisma.proof.findUnique({
-      where: { id: proofId },
-      select: { id: true },
-    }),
-    socialPrisma.user.upsert({
-      where: { walletAddress },
-      create: { walletAddress },
-      update: {},
-      select: { id: true },
-    }),
-  ]);
+  const proof = await loadProofAccess(proofId);
 
-  if (!proof) {
+  if (
+    !proof ||
+    !canViewCommitment(
+      {
+        isPublic: proof.commitment.isPublic,
+        makerWalletAddress: proof.commitment.maker.walletAddress,
+      },
+      walletAddress
+    )
+  ) {
     return NextResponse.json({ ok: false, error: "Proof not found" }, { status: 404 });
   }
 
-  await reactionDelegate.upsert({
+  const user = await socialPrisma.user.upsert({
+    where: { walletAddress },
+    create: { walletAddress },
+    update: {},
+    select: { id: true },
+  });
+
+  await socialPrisma.reaction.upsert({
     where: {
       proofId_userId_type: {
         proofId,
@@ -174,6 +217,80 @@ export async function POST(
     },
     update: {},
     create: {
+      proofId,
+      userId: user.id,
+      type,
+    },
+  });
+
+  return NextResponse.json({
+    ok: true,
+    ...(await loadReactionState(proofId, walletAddress)),
+  });
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: proofId } = await params;
+  const body = (await request.json()) as ReactionInput;
+  const walletAddress = body.walletAddress?.trim();
+  const type = body.type;
+
+  if (!walletAddress || !type) {
+    return NextResponse.json(
+      { ok: false, error: "walletAddress and type are required" },
+      { status: 400 }
+    );
+  }
+
+  if (!validTypes.includes(type)) {
+    return NextResponse.json(
+      { ok: false, error: "Invalid reaction type" },
+      { status: 400 }
+    );
+  }
+
+  if (!process.env.DATABASE_URL?.trim()) {
+    return NextResponse.json({
+      ok: true,
+      counts: emptyCounts(),
+      viewerTypes: [],
+    });
+  }
+
+  if (typeof socialPrisma.reaction.deleteMany !== "function") {
+    return NextResponse.json(
+      { ok: false, error: "Reaction support is unavailable" },
+      { status: 503 }
+    );
+  }
+
+  const proof = await loadProofAccess(proofId);
+
+  if (
+    !proof ||
+    !canViewCommitment(
+      {
+        isPublic: proof.commitment.isPublic,
+        makerWalletAddress: proof.commitment.maker.walletAddress,
+      },
+      walletAddress
+    )
+  ) {
+    return NextResponse.json({ ok: false, error: "Proof not found" }, { status: 404 });
+  }
+
+  const user = await socialPrisma.user.upsert({
+    where: { walletAddress },
+    create: { walletAddress },
+    update: {},
+    select: { id: true },
+  });
+
+  await socialPrisma.reaction.deleteMany({
+    where: {
       proofId,
       userId: user.id,
       type,

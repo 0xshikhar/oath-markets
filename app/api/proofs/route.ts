@@ -3,6 +3,7 @@ import { formatLamportsToSolLabel, generateCoachMessage } from "@/lib/coach-ai";
 import { prisma } from "@/lib/prisma";
 import { getCommitmentBySlug } from "@/lib/oath-data";
 import { normalizeCoachTone } from "@/lib/coach-tone";
+import { canViewCommitment } from "@/lib/oath-access";
 
 export const runtime = "nodejs";
 
@@ -45,6 +46,21 @@ type ProofCoachContextRecord = {
   }>;
 };
 
+type ProofAccessRecord = {
+  id: string;
+  isPublic: boolean;
+  proofCount: number;
+  title: string;
+  description: string | null;
+  category: string;
+  proofType: string;
+  requiredProofDays: number;
+  totalDays: number;
+  maker: {
+    walletAddress: string;
+  };
+};
+
 export async function POST(request: Request) {
   const body = (await request.json()) as ProofInput;
   const slug = body.commitmentSlug?.trim();
@@ -74,8 +90,38 @@ export async function POST(request: Request) {
     );
   }
 
-  const commitment = await prisma.commitment.findUnique({ where: { slug } });
+  const commitment = (await prisma.commitment.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      isPublic: true,
+      proofCount: true,
+      title: true,
+      description: true,
+      category: true,
+      proofType: true,
+      requiredProofDays: true,
+      totalDays: true,
+      maker: {
+        select: {
+          walletAddress: true,
+        },
+      },
+    },
+  })) as ProofAccessRecord | null;
   if (!commitment) {
+    return NextResponse.json({ ok: false, error: "Commitment not found" }, { status: 404 });
+  }
+
+  if (
+    !canViewCommitment(
+      {
+        isPublic: commitment.isPublic,
+        makerWalletAddress: commitment.maker.walletAddress,
+      },
+      walletAddress
+    )
+  ) {
     return NextResponse.json({ ok: false, error: "Commitment not found" }, { status: 404 });
   }
 
@@ -190,7 +236,7 @@ export async function POST(request: Request) {
     },
   });
 
-  const updatedCommitment = await getCommitmentBySlug(slug);
+  const updatedCommitment = await getCommitmentBySlug(slug, walletAddress);
   if (!updatedCommitment) {
     return NextResponse.json(
       { ok: false, error: "Failed to load updated commitment" },

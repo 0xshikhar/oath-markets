@@ -5,6 +5,7 @@ import {
 } from "@/lib/coach-ai";
 import { prisma } from "@/lib/prisma";
 import { normalizeCoachTone } from "@/lib/coach-tone";
+import { canViewCommitment } from "@/lib/oath-access";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,7 @@ type CoachThreadRecord = {
   requiredProofDays: number;
   totalDays: number;
   coachTone: string;
+  isPublic: boolean;
   maker: {
     walletAddress: string;
     timezone: string;
@@ -75,6 +77,7 @@ export async function POST(request: Request) {
       requiredProofDays: true,
       totalDays: true,
       coachTone: true,
+      isPublic: true,
       maker: {
         select: {
           walletAddress: true,
@@ -107,6 +110,18 @@ export async function POST(request: Request) {
     },
   })) as CoachThreadRecord | null;
   if (!commitment) {
+    return NextResponse.json({ ok: false, error: "Commitment not found" }, { status: 404 });
+  }
+
+  if (
+    !canViewCommitment(
+      {
+        isPublic: commitment.isPublic,
+        makerWalletAddress: commitment.maker.walletAddress,
+      },
+      walletAddress
+    )
+  ) {
     return NextResponse.json({ ok: false, error: "Commitment not found" }, { status: 404 });
   }
 

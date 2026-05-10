@@ -125,7 +125,10 @@ export async function POST(request: Request) {
       } as unknown as Prisma.CommitmentUncheckedCreateInput,
     });
 
-    const createdCommitment = await getCommitmentBySlug(commitment.slug);
+    const createdCommitment = await getCommitmentBySlug(
+      commitment.slug,
+      makerWalletAddress
+    );
     if (!createdCommitment) {
       throw new Error("Failed to load created commitment");
     }
