@@ -3,6 +3,7 @@ import { PublicPageShell } from "../../components/public-page-shell";
 import { getCommitmentBySlug } from "@/lib/oath-data";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { notFound } from "next/navigation";
 
 type CommitmentPageProps = {
   params: Promise<{
@@ -13,6 +14,10 @@ type CommitmentPageProps = {
 export default async function CommitmentPage({ params }: CommitmentPageProps) {
   const { slug } = await params;
   const commitment = await getCommitmentBySlug(slug);
+
+  if (!commitment) {
+    notFound();
+  }
 
   return (
     <PublicPageShell
