@@ -213,6 +213,7 @@ export function CreateWizard() {
         const data = (await response.json()) as {
           ok: boolean;
           commitment?: CommitmentSummary;
+          privateShareUrl?: string | null;
           error?: string;
         };
 
@@ -221,9 +222,22 @@ export function CreateWizard() {
         }
 
         setCreatedCommitment(data.commitment);
+        if (data.privateShareUrl) {
+          try {
+            await navigator.clipboard.writeText(data.privateShareUrl);
+          } catch {
+            /* clipboard is a convenience, not a hard requirement */
+          }
+        }
         toast.success(
           payload.onchainTxSig ? "Your oath is live on-chain." : "Your oath is live.",
-          fallbackDescription ? { description: fallbackDescription } : undefined
+          data.privateShareUrl
+            ? {
+                description: "Private share link copied to your clipboard.",
+              }
+            : fallbackDescription
+              ? { description: fallbackDescription }
+              : undefined
         );
         router.push(data.commitment.publicUrl);
       } catch (error) {

@@ -16,6 +16,7 @@ import {
   findReputationPda,
   getCoStakeBeliefInstructionAsync,
 } from "@/lib/generated/oath";
+import { sameWalletAddress } from "@/lib/oath-access";
 import {
   getOathProgramUnavailableMessage,
   isOathProgramAvailable,
@@ -30,18 +31,25 @@ import { ProofReactionStrip } from "./proof-reaction-strip";
 type CommitmentSurfaceClientProps = {
   commitment: CommitmentDetail | null;
   slug: string;
+  accessToken?: string | null;
 };
 
 async function fetchCommitmentDetail(
   slug: string,
-  walletAddress?: string | null
+  walletAddress?: string | null,
+  accessToken?: string | null
 ): Promise<CommitmentDetail> {
-  const response = await fetch(
-    `/api/commitments/${slug}${
-      walletAddress ? `?walletAddress=${encodeURIComponent(walletAddress)}` : ""
-    }`,
-    { cache: "no-store" }
-  );
+  const params = new URLSearchParams();
+  if (walletAddress) {
+    params.set("walletAddress", walletAddress);
+  }
+  if (accessToken) {
+    params.set("accessToken", accessToken);
+  }
+  const query = params.toString();
+  const response = await fetch(`/api/commitments/${slug}${query ? `?${query}` : ""}`, {
+    cache: "no-store",
+  });
   const data = (await response.json()) as {
     ok: boolean;
     commitment?: CommitmentDetail;
@@ -58,6 +66,7 @@ async function fetchCommitmentDetail(
 export function CommitmentSurfaceClient({
   commitment,
   slug,
+  accessToken,
 }: CommitmentSurfaceClientProps) {
   const { wallet, signer } = useWallet();
   const { cluster } = useCluster();
@@ -70,6 +79,7 @@ export function CommitmentSurfaceClient({
   const [beliefAmount, setBeliefAmount] = useState("0.1");
   const [isBelieving, setIsBelieving] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
+  const [isGeneratingShareLink, setIsGeneratingShareLink] = useState(false);
   const [fetchedCommitment, setFetchedCommitment] = useState<{
     walletAddress: string;
     commitment: CommitmentDetail;
@@ -88,7 +98,11 @@ export function CommitmentSurfaceClient({
 
     void (async () => {
       try {
-        const nextCommitment = await fetchCommitmentDetail(slug, walletAddress);
+        const nextCommitment = await fetchCommitmentDetail(
+          slug,
+          walletAddress,
+          accessToken
+        );
         if (!cancelled) {
           setFetchedCommitment({ walletAddress, commitment: nextCommitment });
         }
@@ -102,7 +116,7 @@ export function CommitmentSurfaceClient({
     return () => {
       cancelled = true;
     };
-  }, [commitment, slug, walletAddress]);
+  }, [accessToken, commitment, slug, walletAddress]);
 
   const activeCommitment = commitment
     ? commitment
@@ -111,12 +125,21 @@ export function CommitmentSurfaceClient({
       : null;
 
   const syncCommitment = async () => {
-    const nextCommitment = await fetchCommitmentDetail(slug, walletAddress);
+    const nextCommitment = await fetchCommitmentDetail(
+      slug,
+      walletAddress,
+      accessToken
+    );
     if (walletAddress) {
       setFetchedCommitment({ walletAddress, commitment: nextCommitment });
     }
     return nextCommitment;
   };
+
+  const isMaker =
+    Boolean(activeCommitment && walletAddress) &&
+    sameWalletAddress(activeCommitment?.makerWalletAddress, walletAddress);
+  const isPrivateCommitment = Boolean(activeCommitment && !activeCommitment.isPublic);
 
   const submitBelief = async () => {
     if (!activeCommitment) {
@@ -169,6 +192,7 @@ export function CommitmentSurfaceClient({
           stakeAmountSol: Number(beliefAmount || 0.1),
           onchainAddress,
           onchainTxSig,
+          accessToken,
         }),
       });
       const data = await response.json();
@@ -209,6 +233,7 @@ export function CommitmentSurfaceClient({
           walletAddress,
           content,
           parentCommentId,
+          accessToken,
         }),
       });
       const data = await response.json();
@@ -240,6 +265,42 @@ export function CommitmentSurfaceClient({
     toast.success("Link copied.");
   };
 
+  const createPrivateShareLink = async () => {
+    if (!walletAddress || !activeCommitment) {
+      toast.error("Connect the maker wallet to create a private link.");
+      return;
+    }
+
+    try {
+      setIsGeneratingShareLink(true);
+      const response = await fetch(`/api/commitments/${activeCommitment.slug}/private-link`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          walletAddress,
+        }),
+      });
+      const data = (await response.json()) as {
+        ok: boolean;
+        shareUrl?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.ok || !data.shareUrl) {
+        throw new Error(data.error ?? "Unable to create private link");
+      }
+
+      await navigator.clipboard.writeText(data.shareUrl);
+      toast.success("Private link copied.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to create private link");
+    } finally {
+      setIsGeneratingShareLink(false);
+    }
+  };
+
   if (!activeCommitment) {
     return (
       <Card className="border-oath-border bg-card">
@@ -254,12 +315,13 @@ export function CommitmentSurfaceClient({
               This oath is private.
             </h2>
             <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-              Connect the maker wallet to unlock the full commitment, proof feed,
-              and private discussion thread.
+              Connect the maker wallet or open a private access link to unlock the
+              full commitment, proof feed, and private discussion thread.
             </p>
           </div>
           <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 text-sm leading-7 text-muted-foreground">
-            Private commitments are maker-only until the owner opens them.
+            Private commitments stay out of the public feed until the maker shares an
+            access link.
           </div>
         </CardContent>
       </Card>
@@ -371,13 +433,24 @@ export function CommitmentSurfaceClient({
                 </div>
               </DialogContent>
             </Dialog>
-            <Button
-              variant="outline"
-              className="rounded-[var(--radius)] border-oath-border bg-background/40"
-              onClick={copyLink}
-            >
-              Copy link
-            </Button>
+            {!isPrivateCommitment || accessToken ? (
+              <Button
+                variant="outline"
+                className="rounded-[var(--radius)] border-oath-border bg-background/40"
+                onClick={copyLink}
+              >
+                {isPrivateCommitment ? "Copy shared link" : "Copy link"}
+              </Button>
+            ) : isMaker ? (
+              <Button
+                variant="outline"
+                className="rounded-[var(--radius)] border-oath-border bg-background/40"
+                onClick={createPrivateShareLink}
+                disabled={isGeneratingShareLink}
+              >
+                {isGeneratingShareLink ? "Generating..." : "Copy private link"}
+              </Button>
+            ) : null}
             <Button
               asChild
               variant="ghost"

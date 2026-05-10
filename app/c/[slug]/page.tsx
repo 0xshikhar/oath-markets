@@ -9,18 +9,37 @@ type CommitmentPageProps = {
   params: Promise<{
     slug: string;
   }>;
+  searchParams?:
+    | Promise<Record<string, string | string[] | undefined>>
+    | Record<string, string | string[] | undefined>;
 };
 
-export default async function CommitmentPage({ params }: CommitmentPageProps) {
+export default async function CommitmentPage({
+  params,
+  searchParams,
+}: CommitmentPageProps) {
   const { slug } = await params;
-  const commitment = await getCommitmentBySlug(slug);
+  const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
+  const accessTokenValue = resolvedSearchParams.accessToken;
+  const accessToken = Array.isArray(accessTokenValue)
+    ? accessTokenValue[0]?.trim()
+    : accessTokenValue?.trim();
+  const commitment = await getCommitmentBySlug(slug, undefined, accessToken);
 
   if (commitment) {
     return (
       <PublicPageShell
-        eyebrow="Commitment"
-        title="Public commitment streak page."
-        description="This is the viral surface: goal, stake, believers, proof feed, and coach responses all in one place."
+        eyebrow={commitment.isPublic ? "Commitment" : "Private commitment"}
+        title={
+          commitment.isPublic
+            ? "Public commitment streak page."
+            : "Private commitment unlocked."
+        }
+        description={
+          commitment.isPublic
+            ? "This is the viral surface: goal, stake, believers, proof feed, and coach responses all in one place."
+            : "This private oath is visible because the maker wallet connected or a private access link was used. The page stays out of the public feed, but invited viewers can still participate."
+        }
         actions={
           <Button
             asChild
@@ -31,7 +50,11 @@ export default async function CommitmentPage({ params }: CommitmentPageProps) {
           </Button>
         }
       >
-        <CommitmentSurfaceClient commitment={commitment} slug={slug} />
+        <CommitmentSurfaceClient
+          commitment={commitment}
+          slug={slug}
+          accessToken={accessToken ?? null}
+        />
       </PublicPageShell>
     );
   }
@@ -46,7 +69,7 @@ export default async function CommitmentPage({ params }: CommitmentPageProps) {
     <PublicPageShell
       eyebrow="Private commitment"
       title="This oath is private."
-      description="Only the maker wallet can unlock this commitment, its proof feed, and its discussion thread."
+      description="Connect the maker wallet or open a private access link to unlock this commitment, its proof feed, and its discussion thread."
       actions={
         <Button
           asChild
@@ -57,7 +80,7 @@ export default async function CommitmentPage({ params }: CommitmentPageProps) {
         </Button>
       }
     >
-      <CommitmentSurfaceClient commitment={null} slug={slug} />
+      <CommitmentSurfaceClient commitment={null} slug={slug} accessToken={accessToken ?? null} />
     </PublicPageShell>
   );
 }
