@@ -22,14 +22,17 @@ export async function POST(request: Request) {
   }
 
   if (!process.env.DATABASE_URL?.trim()) {
-    return NextResponse.json({
-      ok: true,
-      belief: {
-        commitmentSlug: slug,
-        walletAddress,
-        stakeAmountSol: body.stakeAmountSol ?? 0.1,
-      },
-    });
+    return NextResponse.json(
+      { ok: false, error: "Database is not configured" },
+      { status: 503 }
+    );
+  }
+
+  if (!body.onchainAddress?.trim() || !body.onchainTxSig?.trim()) {
+    return NextResponse.json(
+      { ok: false, error: "On-chain transaction is required" },
+      { status: 400 }
+    );
   }
 
   const commitment = await prisma.commitment.findUnique({ where: { slug } });
@@ -50,13 +53,21 @@ export async function POST(request: Request) {
       commitmentId: commitment.id,
       believerId: user.id,
       stakeAmountLamports: BigInt(Math.round((body.stakeAmountSol ?? 0.1) * 1_000_000_000)),
-      onchainAddress: body.onchainAddress?.trim() || null,
-      onchainTxSig: body.onchainTxSig?.trim() || `demo-${Date.now()}`,
+      onchainAddress: body.onchainAddress.trim(),
+      onchainTxSig: body.onchainTxSig.trim(),
     },
   });
 
+  const updatedCommitment = await getCommitmentBySlug(slug);
+  if (!updatedCommitment) {
+    return NextResponse.json(
+      { ok: false, error: "Failed to load updated commitment" },
+      { status: 500 }
+    );
+  }
+
   return NextResponse.json({
     ok: true,
-    commitment: await getCommitmentBySlug(slug),
+    commitment: updatedCommitment,
   });
 }

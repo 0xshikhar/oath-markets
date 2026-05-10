@@ -3,9 +3,8 @@ import {
   formatLamportsToSolLabel,
   generateCoachMessage,
 } from "@/lib/coach-ai";
-import { normalizeCoachTone } from "@/lib/coach-tone";
 import { prisma } from "@/lib/prisma";
-import { getCommitmentBySlug } from "@/lib/oath-data";
+import { normalizeCoachTone } from "@/lib/coach-tone";
 
 export const runtime = "nodejs";
 
@@ -58,34 +57,10 @@ export async function POST(request: Request) {
   }
 
   if (!process.env.DATABASE_URL?.trim()) {
-    const commitment = await getCommitmentBySlug(slug);
-    const coachMessage = await generateCoachMessage({
-      event: "USER_REPLY",
-      coachTone: "SUPPORTIVE_FRIEND",
-      commitmentTitle: commitment.title,
-      commitmentDescription: commitment.description,
-      category: commitment.category,
-      proofType: commitment.proofType,
-      dayNumber: commitment.proofCount + 1,
-      totalDays: commitment.totalDays,
-      proofCount: commitment.proofCount,
-      requiredProofDays: commitment.totalDays,
-      believerCount: commitment.believerCount,
-      believerPoolSol: null,
-      timezone: "UTC",
-      notifyTime: "09:00",
-      recentProofText: commitment.proofSamples[0]?.textContent ?? null,
-      recentUserReply: content,
-      recentCoachMessage: commitment.coachMessages[0]?.content ?? null,
-    });
-
-    return NextResponse.json({
-      ok: true,
-      coachMessage: {
-        role: "COACH",
-        content: coachMessage,
-      },
-    });
+    return NextResponse.json(
+      { ok: false, error: "Database is not configured" },
+      { status: 503 }
+    );
   }
 
   const commitment = (await prisma.commitment.findUnique({

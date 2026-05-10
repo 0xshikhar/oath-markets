@@ -21,14 +21,10 @@ export async function POST(request: Request) {
   }
 
   if (!process.env.DATABASE_URL?.trim()) {
-    return NextResponse.json({
-      ok: true,
-      comment: {
-        commitmentSlug: slug,
-        walletAddress,
-        content,
-      },
-    });
+    return NextResponse.json(
+      { ok: false, error: "Database is not configured" },
+      { status: 503 }
+    );
   }
 
   const commitment = await prisma.commitment.findUnique({ where: { slug } });

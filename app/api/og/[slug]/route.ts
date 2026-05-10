@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { ImageResponse } from "next/og";
 import { getCommitmentBySlug } from "@/lib/oath-data";
+import { NextResponse } from "next/server";
 
 export async function GET(
   _request: Request,
@@ -8,6 +9,10 @@ export async function GET(
 ) {
   const { slug } = await params;
   const commitment = await getCommitmentBySlug(slug);
+
+  if (!commitment) {
+    return NextResponse.json({ ok: false, error: "Commitment not found" }, { status: 404 });
+  }
 
   return new ImageResponse(
     createElement(
@@ -33,18 +38,17 @@ export async function GET(
           "div",
           {
             style: {
-              display: "inline-flex",
+              display: "flex",
               alignItems: "center",
-              padding: "10px 18px",
-              borderRadius: 999,
-              background: "rgba(245,166,35,0.12)",
-              color: "#f5a623",
-              width: "fit-content",
-              fontSize: 20,
-              letterSpacing: "0.18em",
+              justifyContent: "center",
+              width: 120,
+              height: 60,
             },
           },
-          "OATH"
+          createElement("img", {
+            src: "https://oath-markets.vercel.app/logo.png",
+            style: { objectFit: "contain", width: "100%", height: "100%" },
+          })
         ),
         createElement(
           "div",

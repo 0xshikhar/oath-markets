@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { formatLamportsToSolLabel, generateCoachMessage } from "@/lib/coach-ai";
-import { normalizeCoachTone } from "@/lib/coach-tone";
 import { prisma } from "@/lib/prisma";
 import { getCommitmentBySlug } from "@/lib/oath-data";
+import { normalizeCoachTone } from "@/lib/coach-tone";
 
 export const runtime = "nodejs";
 
@@ -54,40 +54,22 @@ export async function POST(request: Request) {
   }
 
   if (!process.env.DATABASE_URL?.trim()) {
-    const commitment = await getCommitmentBySlug(slug);
-    const dayNumber = body.dayNumber ?? commitment.proofCount + 1;
-    const coachMessage = await generateCoachMessage({
-      event: "PROOF_SUBMITTED",
-      coachTone: "SUPPORTIVE_FRIEND",
-      commitmentTitle: commitment.title,
-      commitmentDescription: commitment.description,
-      category: commitment.category,
-      proofType: commitment.proofType,
-      dayNumber,
-      totalDays: commitment.totalDays,
-      proofCount: commitment.proofCount,
-      requiredProofDays: commitment.totalDays,
-      believerCount: commitment.believerCount,
-      believerPoolSol: null,
-      timezone: "UTC",
-      notifyTime: "09:00",
-      recentProofText: body.textContent?.trim() ?? null,
-      recentCoachMessage: commitment.coachMessages[0]?.content ?? null,
-    });
-
-    return NextResponse.json({
-      ok: true,
-      proof: {
-        commitmentSlug: slug,
-        dayNumber,
-        coachMessage,
-      },
-    });
+    return NextResponse.json(
+      { ok: false, error: "Database is not configured" },
+      { status: 503 }
+    );
   }
 
   if (!walletAddress) {
     return NextResponse.json(
       { ok: false, error: "walletAddress is required" },
+      { status: 400 }
+    );
+  }
+
+  if (!body.onchainTxSig?.trim()) {
+    return NextResponse.json(
+      { ok: false, error: "On-chain transaction is required" },
       { status: 400 }
     );
   }
@@ -113,7 +95,7 @@ export async function POST(request: Request) {
       linkUrl: body.linkUrl?.trim() || null,
       publicNote: body.publicNote?.trim() || null,
       contentHash: body.contentHash?.trim() || null,
-      onchainTxSig: body.onchainTxSig?.trim() || null,
+      onchainTxSig: body.onchainTxSig.trim(),
     },
   });
 
@@ -208,9 +190,17 @@ export async function POST(request: Request) {
     },
   });
 
+  const updatedCommitment = await getCommitmentBySlug(slug);
+  if (!updatedCommitment) {
+    return NextResponse.json(
+      { ok: false, error: "Failed to load updated commitment" },
+      { status: 500 }
+    );
+  }
+
   return NextResponse.json({
     ok: true,
-    commitment: await getCommitmentBySlug(slug),
+    commitment: updatedCommitment,
     coachMessage,
   });
 }

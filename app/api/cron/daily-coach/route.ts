@@ -3,10 +3,9 @@ import {
   formatLamportsToSolLabel,
   formatZonedDateKey,
   generateCoachMessage,
-  shouldSendCoachCheckInNow,
 } from "@/lib/coach-ai";
-import { normalizeCoachTone } from "@/lib/coach-tone";
 import { prisma } from "@/lib/prisma";
+import { normalizeCoachTone } from "@/lib/coach-tone";
 
 export const runtime = "nodejs";
 
@@ -134,11 +133,6 @@ export async function GET(request: Request) {
 
     const timezone = commitment.maker.timezone || "UTC";
     const notifyTime = commitment.maker.notifyTime || "09:00";
-
-    if (!shouldSendCoachCheckInNow(now, timezone, notifyTime)) {
-      skipped += 1;
-      continue;
-    }
 
     const todayKey = formatZonedDateKey(now, timezone);
     const alreadySentToday = commitment.coachMessages.some(
