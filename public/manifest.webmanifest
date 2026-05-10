@@ -1,0 +1,32 @@
+{
+  "name": "OATH",
+  "short_name": "OATH",
+  "description": "Public commitment stakes on Solana with escrow, proof, and reputation.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": ["finance", "social", "productivity"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "1282x438",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "1282x438",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
