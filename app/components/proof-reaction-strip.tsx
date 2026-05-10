@@ -31,6 +31,17 @@ type ReactionState = {
   viewerTypes: ReactionType[];
 };
 
+type ReactionApiResponse =
+  | {
+      ok: true;
+      counts: ReactionCounts;
+      viewerTypes: ReactionType[];
+    }
+  | {
+      ok: false;
+      error?: string;
+    };
+
 export function ProofReactionStrip({
   proofId,
   initialCounts,
@@ -50,7 +61,13 @@ export function ProofReactionStrip({
           walletAddress ? `?walletAddress=${encodeURIComponent(walletAddress)}` : ""
         }`
       );
-      const data = (await response.json()) as any;
+      if (response.status === 404) {
+        return {
+          counts: initialCounts,
+          viewerTypes: [],
+        };
+      }
+      const data = (await response.json()) as ReactionApiResponse;
 
       if (!response.ok || !data.ok) {
         throw new Error("Unable to load reactions");
@@ -82,10 +99,12 @@ export function ProofReactionStrip({
           type,
         }),
       });
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as ReactionApiResponse;
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error ?? "Reaction failed");
+        const errorMessage =
+          !data.ok && "error" in data ? data.error : undefined;
+        throw new Error(errorMessage ?? "Reaction failed");
       }
 
       return data;

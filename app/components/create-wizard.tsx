@@ -109,6 +109,8 @@ export function CreateWizard() {
   const { wallet, signer } = useWallet();
   const { cluster } = useCluster();
   const solanaClient = useSolanaClient();
+  const { cluster } = useCluster();
+  const solanaClient = useSolanaClient();
   const { send, isSending } = useSendTransaction();
   const [step, setStep] = useState(0);
   const [isPending, startTransition] = useTransition();
@@ -142,6 +144,10 @@ export function CreateWizard() {
   const submit = () => {
     startTransition(async () => {
       try {
+        if (!walletAddress || !signer) {
+          throw new Error("Connect your wallet to create an oath.");
+        }
+
         const payload: CommitmentCreateRequest = {
           walletAddress,
           title: state.title,
@@ -232,6 +238,8 @@ export function CreateWizard() {
   return (
     <section className="grid gap-8 pb-10 sm:pb-14 lg:grid-cols-[1.1fr_0.9fr] lg:pb-16">
       <div className="space-y-6">
+    <section className="grid gap-8 pb-10 sm:pb-14 lg:grid-cols-[1.1fr_0.9fr] lg:pb-16">
+      <div className="space-y-6">
         <div className="flex flex-wrap gap-2">
           {steps.map((label, index) => (
             <Badge
@@ -251,6 +259,7 @@ export function CreateWizard() {
         <Progress value={progress} className="h-2" />
 
         <Card className="border-oath-border bg-card">
+          <CardHeader className="space-y-4 pb-4 sm:pb-6">
           <CardHeader className="space-y-4 pb-4 sm:pb-6">
             <Badge className="w-fit bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
               Step {step + 1}
@@ -273,6 +282,7 @@ export function CreateWizard() {
             </p>
           </CardHeader>
 
+          <CardContent className="space-y-6 pb-6 sm:space-y-7 sm:pb-8">
           <CardContent className="space-y-6 pb-6 sm:space-y-7 sm:pb-8">
             {step === 0 && (
               <>
@@ -485,6 +495,7 @@ export function CreateWizard() {
         </Card>
 
         <div className="mt-2 flex flex-wrap gap-3 pb-4 sm:pb-8">
+        <div className="mt-2 flex flex-wrap gap-3 pb-4 sm:pb-8">
           <Button
             type="button"
             variant="outline"
@@ -509,6 +520,7 @@ export function CreateWizard() {
               disabled={isBusy}
               className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
             >
+              {isBusy ? "Launching..." : "Publish oath"}
               {isBusy ? "Launching..." : "Publish oath"}
             </Button>
           )}

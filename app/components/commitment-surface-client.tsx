@@ -23,8 +23,10 @@ import {
 } from "@/lib/oath-program";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import { useSolanaClient } from "../lib/solana-client-context";
+import { useSolanaClient } from "../lib/solana-client-context";
 import { useWallet } from "../lib/wallet/context";
 import type { CommitmentDetail } from "@/lib/oath-data";
+import { useCluster } from "./cluster-context";
 import { useCluster } from "./cluster-context";
 import { ProofReactionStrip } from "./proof-reaction-strip";
 
@@ -35,6 +37,8 @@ type CommitmentSurfaceClientProps = {
 export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientProps) {
   const { wallet, signer } = useWallet();
   const router = useRouter();
+  const { cluster } = useCluster();
+  const solanaClient = useSolanaClient();
   const { cluster } = useCluster();
   const solanaClient = useSolanaClient();
   const { send } = useSendTransaction();
@@ -148,6 +152,9 @@ export function CommitmentSurfaceClient({ commitment }: CommitmentSurfaceClientP
             </Badge>
             <Badge variant="outline" className="border-oath-border text-oath-muted-text">
               {commitment.proofType}
+            </Badge>
+            <Badge variant="outline" className="border-oath-border text-oath-muted-text">
+              {commitment.coachToneLabel}
             </Badge>
             {commitment.makerVerified ? (
               <Badge className="bg-oath-green/10 text-oath-green hover:bg-oath-green/20">

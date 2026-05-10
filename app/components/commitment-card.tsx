@@ -22,12 +22,20 @@ export function CommitmentCard({ commitment, compact = false }: CommitmentCardPr
     <Card className="group flex h-full flex-col overflow-hidden border-oath-border bg-card transition-transform duration-300 hover:-translate-y-0.5">
       <CardHeader className={compact ? "space-y-4 p-5" : "space-y-4 p-6"}>
         <div className="flex items-center justify-between gap-3">
-          <Badge
-            variant="outline"
-            className="border-oath-border bg-background text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
-          >
-            {commitment.category}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant="outline"
+              className="border-oath-border bg-background text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
+            >
+              {commitment.category}
+            </Badge>
+            <Badge
+              variant="outline"
+              className="border-oath-border bg-background text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
+            >
+              {commitment.coachToneLabel}
+            </Badge>
+          </div>
           <span
             className={`rounded-[var(--radius)] border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em] ${
               statusTone[commitment.status] ?? statusTone.ACTIVE

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const footerLinks = [
@@ -15,10 +16,14 @@ export function SiteFooter() {
   return (
     <footer className="relative z-10 border-t border-border bg-background/70">
       <div className="mx-auto grid max-w-[1140px] gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
-        <div className="space-y-2">
-          <p className="text-[0.68rem] uppercase tracking-[0.28em] text-oath-muted-text">
-            OATH
-          </p>
+        <div className="flex items-center gap-3">
+          <Image
+            src="/logo.png"
+            alt="OATH logo"
+            width={60}
+            height={20}
+            className="h-auto w-auto object-contain"
+          />
           <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
             Public commitment stakes on Solana. Built for Frontier, designed for
             follow-through, and shaped for shareable accountability.

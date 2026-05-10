@@ -104,6 +104,10 @@ export function DashboardClient({ summary }: DashboardClientProps) {
     if (!selectedCommitment) return;
     startTransition(async () => {
       try {
+        if (!walletAddress || !signer || !selectedCommitment.onchainAddress) {
+          throw new Error("Connect your wallet to submit proof on-chain.");
+        }
+
         if (proofImageFile && !proofImageUrl) {
           throw new Error("Wait for the image upload to finish before submitting.");
         }
