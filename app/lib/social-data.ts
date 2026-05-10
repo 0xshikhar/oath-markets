@@ -1,10 +1,78 @@
 import { prisma } from "@/lib/prisma";
 import { getExploreCommitments, type CommitmentSummary, type ReactionCounts } from "@/lib/oath-data";
 
-const socialPrisma = prisma as any;
+type SocialPrismaClient = typeof prisma & {
+  reaction: NonNullable<typeof prisma.reaction>;
+  proof: NonNullable<typeof prisma.proof>;
+  commitment: NonNullable<typeof prisma.commitment>;
+  user: NonNullable<typeof prisma.user>;
+  follow: NonNullable<typeof prisma.follow>;
+  belief: NonNullable<typeof prisma.belief>;
+};
+
+const socialPrisma = prisma as SocialPrismaClient;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
+
+type FeedUserRecord = {
+  walletAddress: string;
+  username: string | null;
+  avatarUrl: string | null;
+  worldIdVerified: boolean;
+};
+
+type FeedFollowRecord = {
+  followingId: string;
+  following: FeedUserRecord;
+};
+
+type FeedCommitmentRecord = {
+  slug: string;
+  title: string;
+  description: string | null;
+  stakeAmountLamports: bigint;
+  totalDays: number;
+  createdAt: Date;
+  maker: FeedUserRecord;
+};
+
+type FeedProofRecord = {
+  id: string;
+  dayNumber: number;
+  textContent: string | null;
+  publicNote: string | null;
+  createdAt: Date;
+  commitment: {
+    slug: string;
+    title: string;
+    description: string | null;
+    maker: FeedUserRecord;
+  };
+  reactions: Array<{ type: string }>;
+};
+
+type FeedBeliefRecord = {
+  stakeAmountLamports: bigint;
+  createdAt: Date;
+  believer: FeedUserRecord;
+  commitment: {
+    slug: string;
+    title: string;
+    description: string | null;
+    maker: FeedUserRecord;
+  };
+};
+
+type FeedResolvedCommitmentRecord = {
+  slug: string;
+  title: string;
+  description: string | null;
+  status: string;
+  resolvedAt: Date | null;
+  createdAt: Date;
+  maker: FeedUserRecord;
+};
 
 export type HotCommitment = CommitmentSummary & {
   reactionCount24h: number;
@@ -131,6 +199,27 @@ function mapReactionCounts(reactions: { type: string }[]): ReactionCounts {
   return counts;
 }
 
+function rankFeedEvent(event: ActivityEvent) {
+  const createdAtMs = new Date(event.createdAtIso).getTime();
+  const ageHours = Math.max((Date.now() - createdAtMs) / (60 * 60 * 1000), 0);
+  const recencyBoost = Math.max(0, 48 - ageHours);
+
+  if (event.type === "NEW_PROOF") {
+    return 70 + recencyBoost + event.reactionCounts.total * 6;
+  }
+
+  if (event.type === "NEW_OATH") {
+    return 55 + recencyBoost;
+  }
+
+  if (event.type === "BELIEVER") {
+    const stakeScore = Number.parseFloat(event.stakeLabel) || 0;
+    return 48 + recencyBoost + Math.min(stakeScore, 20);
+  }
+
+  return 60 + recencyBoost;
+}
+
 export async function getHotCommitments(limit = 3): Promise<HotCommitment[]> {
   const commitments = await getExploreCommitments({ limit: Math.max(limit, 50) });
 
@@ -144,13 +233,9 @@ export async function getHotCommitments(limit = 3): Promise<HotCommitment[]> {
   }
 
   const since = new Date(Date.now() - DAY_MS);
-  const reactionDelegate = socialPrisma.reaction as
-    | {
-        findMany?: typeof socialPrisma.reaction.findMany;
-      }
-    | undefined;
+  const reactionDelegate = socialPrisma.reaction;
 
-  if (!reactionDelegate?.findMany) {
+  if (typeof reactionDelegate.findMany !== "function") {
     return commitments
       .map((commitment) => ({
         ...commitment,
@@ -168,7 +253,7 @@ export async function getHotCommitments(limit = 3): Promise<HotCommitment[]> {
       .slice(0, limit);
   }
 
-  const reactions = await reactionDelegate.findMany({
+  const reactions = (await reactionDelegate.findMany({
     where: {
       createdAt: { gte: since },
       proof: {
@@ -188,7 +273,7 @@ export async function getHotCommitments(limit = 3): Promise<HotCommitment[]> {
         },
       },
     },
-  });
+  })) as Array<{ proof: { commitment: { slug: string } } }>;
 
   const counts = new Map<string, number>();
   for (const reaction of reactions) {
@@ -218,6 +303,7 @@ export async function getFeedEvents(
   options: { limit?: number; cursor?: string | null } = {}
 ): Promise<FeedResult> {
   const limit = options.limit ?? 20;
+  const fetchLimit = Math.max(limit * 3, 30);
   const before = options.cursor ? new Date(options.cursor) : null;
 
   if (!hasDatabaseUrl) {
@@ -241,7 +327,17 @@ export async function getFeedEvents(
     };
   }
 
-  const follows = await socialPrisma.follow.findMany({
+  const followDelegate = socialPrisma.follow;
+
+  if (typeof followDelegate.findMany !== "function") {
+    return {
+      events: [],
+      nextCursor: null,
+      followingCount: 0,
+    };
+  }
+
+  const follows = (await followDelegate.findMany({
     where: { followerId: viewer.id },
     select: {
       followingId: true,
@@ -254,9 +350,9 @@ export async function getFeedEvents(
         },
       },
     },
-  });
+  })) as FeedFollowRecord[];
 
-  const followingIds = follows.map((entry: any) => entry.followingId);
+  const followingIds = follows.map((entry) => entry.followingId);
   if (followingIds.length === 0) {
     return {
       events: [],
@@ -267,7 +363,7 @@ export async function getFeedEvents(
 
   const dateFilter = before ? { lt: before } : undefined;
 
-  const [commitments, proofs, beliefs, resolvedCommitments] = await Promise.all([
+  const [commitments, proofs, beliefs, resolvedCommitments] = (await Promise.all([
     socialPrisma.commitment.findMany({
       where: {
         makerId: { in: followingIds },
@@ -275,7 +371,7 @@ export async function getFeedEvents(
         ...(dateFilter ? { createdAt: dateFilter } : {}),
       },
       orderBy: { createdAt: "desc" },
-      take: limit,
+      take: fetchLimit,
       select: {
         slug: true,
         title: true,
@@ -302,7 +398,7 @@ export async function getFeedEvents(
         ...(dateFilter ? { createdAt: dateFilter } : {}),
       },
       orderBy: { createdAt: "desc" },
-      take: limit,
+      take: fetchLimit,
       select: {
         id: true,
         dayNumber: true,
@@ -340,7 +436,7 @@ export async function getFeedEvents(
         ...(dateFilter ? { createdAt: dateFilter } : {}),
       },
       orderBy: { createdAt: "desc" },
-      take: limit,
+      take: fetchLimit,
       select: {
         stakeAmountLamports: true,
         createdAt: true,
@@ -377,7 +473,7 @@ export async function getFeedEvents(
         ...(dateFilter ? { resolvedAt: dateFilter } : {}),
       },
       orderBy: { resolvedAt: "desc" },
-      take: limit,
+      take: fetchLimit,
       select: {
         slug: true,
         title: true,
@@ -395,10 +491,15 @@ export async function getFeedEvents(
         },
       },
     }),
-  ]);
+  ])) as [
+    FeedCommitmentRecord[],
+    FeedProofRecord[],
+    FeedBeliefRecord[],
+    FeedResolvedCommitmentRecord[],
+  ];
 
   const events: ActivityEvent[] = [
-    ...commitments.map((commitment: any) => ({
+    ...commitments.map((commitment) => ({
       id: `commitment:${commitment.slug}:${commitment.createdAt.toISOString()}`,
       type: "NEW_OATH" as const,
       createdAtIso: commitment.createdAt.toISOString(),
@@ -418,7 +519,7 @@ export async function getFeedEvents(
       stakeLabel: `${formatSol(commitment.stakeAmountLamports)} SOL`,
       totalDays: commitment.totalDays,
     })),
-    ...proofs.map((proof: any) => ({
+    ...proofs.map((proof) => ({
       id: `proof:${proof.id}`,
       type: "NEW_PROOF" as const,
       createdAtIso: proof.createdAt.toISOString(),
@@ -440,7 +541,7 @@ export async function getFeedEvents(
       proofId: proof.id,
       reactionCounts: mapReactionCounts(proof.reactions),
     })),
-    ...beliefs.map((belief: any) => ({
+    ...beliefs.map((belief) => ({
       id: `belief:${belief.createdAt.toISOString()}:${belief.commitment.slug}`,
       type: "BELIEVER" as const,
       createdAtIso: belief.createdAt.toISOString(),
@@ -467,7 +568,7 @@ export async function getFeedEvents(
       publicUrl: `/c/${belief.commitment.slug}`,
       stakeLabel: `${formatSol(belief.stakeAmountLamports)} SOL`,
     })),
-    ...resolvedCommitments.map((commitment: any) => {
+    ...resolvedCommitments.map((commitment) => {
       const createdAt = commitment.resolvedAt ?? commitment.createdAt;
       return {
         id: `resolved:${commitment.slug}:${createdAt.toISOString()}`,
@@ -490,7 +591,19 @@ export async function getFeedEvents(
         statusLabel: commitment.status === "COMPLETED" ? "Completed" : "Failed",
       };
     }),
-  ].sort((a, b) => new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime());
+  ].sort((a, b) => {
+    const scoreDelta = rankFeedEvent(b) - rankFeedEvent(a);
+    if (scoreDelta !== 0) {
+      return scoreDelta;
+    }
+
+    const timeDelta = new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime();
+    if (timeDelta !== 0) {
+      return timeDelta;
+    }
+
+    return a.id.localeCompare(b.id);
+  });
 
   const sliced = events.slice(0, limit);
 

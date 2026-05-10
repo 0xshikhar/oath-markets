@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { coachToneLabel } from "@/lib/coach-tone";
+import { canViewCommitment, sameWalletAddress } from "@/lib/oath-access";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LAMPORTS_PER_SOL = 1_000_000_000n;
@@ -38,7 +39,7 @@ type CommitmentRecord = {
   maker: UserRecord;
   believerCount: number;
   proofSamples: ProofRecord[];
-  comments: CommentRecord[];
+  comments: RawCommentRecord[];
   coachMessages: CoachMessageRecord[];
 };
 
@@ -53,7 +54,9 @@ type ProofRecord = {
   reactionCounts?: ReactionCounts;
 };
 
-type CommentRecord = {
+type RawCommentRecord = {
+  id: string;
+  parentCommentId: string | null;
   authorName: string;
   content: string;
   createdAt: Date;
@@ -105,6 +108,8 @@ type DbProofRecord = {
 };
 
 type DbCommentRecord = {
+  id: string;
+  parentCommentId: string | null;
   content: string;
   createdAt: Date;
   author: {
@@ -137,6 +142,7 @@ type DbUserProfileRecord = UserRecord & {
 export type CommitmentSummary = {
   slug: string;
   onchainAddress: string | null;
+  isPublic: boolean;
   title: string;
   description: string;
   category: string;
@@ -161,6 +167,21 @@ export type CommitmentSummary = {
   publicUrl: string;
 };
 
+export type CommitmentAccessMeta = {
+  slug: string;
+  isPublic: boolean;
+  makerWalletAddress: string;
+};
+
+export type CommentThreadNode = {
+  id: string;
+  parentCommentId: string | null;
+  authorName: string;
+  content: string;
+  createdAtLabel: string;
+  replies: CommentThreadNode[];
+};
+
 export type CommitmentDetail = CommitmentSummary & {
   completionRatioLabel: string;
   startDateLabel: string;
@@ -174,11 +195,7 @@ export type CommitmentDetail = CommitmentSummary & {
     createdAtLabel: string;
     reactionCounts: ReactionCounts;
   }>;
-  comments: Array<{
-    authorName: string;
-    content: string;
-    createdAtLabel: string;
-  }>;
+  comments: CommentThreadNode[];
   coachMessages: Array<{
     content: string;
     createdAtLabel: string;
@@ -272,6 +289,59 @@ function emptyReactionCounts(): ReactionCounts {
   };
 }
 
+function buildCommentThreads(records: RawCommentRecord[]) {
+  const nodes = new Map<string, CommentThreadNode & { createdAtMs: number }>();
+
+  for (const record of records) {
+    nodes.set(record.id, {
+      id: record.id,
+      parentCommentId: record.parentCommentId,
+      authorName: record.authorName,
+      content: record.content,
+      createdAtLabel: formatDateLabel(record.createdAt),
+      replies: [],
+      createdAtMs: record.createdAt.getTime(),
+    });
+  }
+
+  const roots: Array<CommentThreadNode & { createdAtMs: number }> = [];
+
+  for (const node of nodes.values()) {
+    if (node.parentCommentId && nodes.has(node.parentCommentId)) {
+      nodes.get(node.parentCommentId)?.replies.push(node);
+      continue;
+    }
+
+    roots.push(node);
+  }
+
+  const sortRecursive = (items: Array<CommentThreadNode & { createdAtMs: number }>) => {
+    items.sort((left, right) => left.createdAtMs - right.createdAtMs);
+    for (const item of items) {
+      sortRecursive(item.replies as Array<CommentThreadNode & { createdAtMs: number }>);
+    }
+  };
+
+  sortRecursive(roots);
+
+  const stripCreatedAt = (
+    items: Array<CommentThreadNode & { createdAtMs: number }>
+  ): CommentThreadNode[] =>
+    items.map((item) => {
+      const { createdAtMs, replies, ...rest } = item;
+      void createdAtMs;
+
+      return {
+        ...rest,
+        replies: stripCreatedAt(
+          replies as Array<CommentThreadNode & { createdAtMs: number }>
+        ),
+      };
+    });
+
+  return stripCreatedAt(roots);
+}
+
 function toHandle(user: UserRecord) {
   return user.username ? `@${user.username}` : ellipsify(user.walletAddress, 4);
 }
@@ -302,6 +372,7 @@ function mapCommitment(commitment: CommitmentRecord): CommitmentSummary {
   return {
     slug: commitment.slug,
     onchainAddress: commitment.onchainAddress ?? null,
+    isPublic: commitment.isPublic,
     title: commitment.title,
     description: commitment.description ?? "",
     category: commitment.category,
@@ -346,11 +417,7 @@ function mapCommitmentDetail(commitment: CommitmentRecord): CommitmentDetail {
       createdAtLabel: formatDateLabel(proof.createdAt),
       reactionCounts: proof.reactionCounts ?? emptyReactionCounts(),
     })),
-    comments: commitment.comments.map((comment) => ({
-      authorName: comment.authorName,
-      content: comment.content,
-      createdAtLabel: formatDateLabel(comment.createdAt),
-    })),
+    comments: buildCommentThreads(commitment.comments),
     coachMessages: commitment.coachMessages.map((message) => ({
       content: message.content,
       createdAtLabel: formatDateLabel(message.createdAt),
@@ -495,16 +562,54 @@ async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
   }
 }
 
-async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null> {
-  if (!slug) {
-    return null;
-  }
-
-  if (!hasDatabaseUrl) {
+async function loadDbCommitmentAccess(
+  slug?: string
+): Promise<CommitmentAccessMeta | null> {
+  if (!slug || !hasDatabaseUrl) {
     return null;
   }
 
   try {
+    const record = (await prisma.commitment.findUnique({
+      where: { slug },
+      select: {
+        slug: true,
+        isPublic: true,
+        maker: {
+          select: {
+            walletAddress: true,
+          },
+        },
+      },
+    })) as { slug: string; isPublic: boolean; maker: { walletAddress: string } } | null;
+
+    if (!record) return null;
+
+    return {
+      slug: record.slug,
+      isPublic: record.isPublic,
+      makerWalletAddress: record.maker.walletAddress,
+    };
+  } catch (error) {
+    console.error(`Failed to load commitment access for ${slug}`, error);
+    return null;
+  }
+}
+
+async function loadDbCommitment(
+  slug?: string,
+  viewerWalletAddress?: string | null
+): Promise<CommitmentDetail | null> {
+  if (!slug || !hasDatabaseUrl) {
+    return null;
+  }
+
+  try {
+    const access = await loadDbCommitmentAccess(slug);
+    if (!access || !canViewCommitment(access, viewerWalletAddress)) {
+      return null;
+    }
+
     const record = (await prisma.commitment.findUnique({
       where: { slug },
       select: {
@@ -549,8 +654,10 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
           },
         },
         comments: {
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: "asc" },
           select: {
+            id: true,
+            parentCommentId: true,
             content: true,
             createdAt: true,
             author: {
@@ -612,6 +719,8 @@ async function loadDbCommitment(slug?: string): Promise<CommitmentDetail | null>
         reactionCounts: emptyReactionCounts(),
       })),
       comments: record.comments.map((comment) => ({
+        id: comment.id,
+        parentCommentId: comment.parentCommentId,
         authorName:
           comment.author.username ?? ellipsify(comment.author.walletAddress, 4),
         content: comment.content,
@@ -651,6 +760,9 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
           },
         },
         commitments: {
+          where: {
+            isPublic: true,
+          },
           select: {
             slug: true,
             title: true,
@@ -754,6 +866,95 @@ async function loadDbProfiles(): Promise<ProfileView[]> {
   }
 }
 
+async function loadDbDashboardCommitments(
+  viewerWalletAddress?: string | null
+): Promise<CommitmentSummary[]> {
+  if (!hasDatabaseUrl) {
+    return [];
+  }
+
+  if (viewerWalletAddress) {
+    const user = await prisma.user.findUnique({
+      where: { walletAddress: viewerWalletAddress },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return [];
+    }
+
+    const commitments = (await prisma.commitment.findMany({
+      where: {
+        makerId: user.id,
+      },
+      orderBy: [{ createdAt: "desc" }],
+      take: 48,
+      select: {
+        slug: true,
+        onchainAddress: true,
+        title: true,
+        description: true,
+        category: true,
+        proofType: true,
+        coachTone: true,
+        stakeAmountLamports: true,
+        startDate: true,
+        endDate: true,
+        totalDays: true,
+        requiredProofDays: true,
+        status: true,
+        isPublic: true,
+        proofCount: true,
+        createdAt: true,
+        maker: {
+          select: {
+            walletAddress: true,
+            username: true,
+            bio: true,
+            avatarUrl: true,
+            worldIdVerified: true,
+            notifyTime: true,
+            timezone: true,
+          },
+        },
+        beliefs: {
+          select: { id: true },
+        },
+      },
+    })) as DbCommitmentSummaryRecord[];
+
+    return commitments.map((record: DbCommitmentSummaryRecord) =>
+      mapCommitment({
+        slug: record.slug,
+        onchainAddress: record.onchainAddress,
+        title: record.title,
+        description: record.description,
+        category: record.category,
+        proofType: record.proofType,
+        coachTone: record.coachTone,
+        stakeAmountLamports: record.stakeAmountLamports,
+        startDate: record.startDate,
+        endDate: record.endDate,
+        totalDays: record.totalDays,
+        requiredProofDays: record.requiredProofDays,
+        status: record.status,
+        isPublic: record.isPublic,
+        proofCount: record.proofCount,
+        completionRatio: null,
+        resolvedAt: null,
+        createdAt: record.createdAt,
+        maker: record.maker,
+        believerCount: record.beliefs.length,
+        proofSamples: [],
+        comments: [],
+        coachMessages: [],
+      })
+    );
+  }
+
+  return loadDbCommitments(9);
+}
+
 type DbCoachInboxMessageRecord = {
   content: string;
   createdAt: Date;
@@ -762,10 +963,16 @@ type DbCoachInboxMessageRecord = {
     slug: string;
     title: string;
     status: string;
+    isPublic: boolean;
+    maker: {
+      walletAddress: string;
+    };
   };
 };
 
-async function loadDbCoachInbox(): Promise<DashboardView["inbox"] | null> {
+async function loadDbCoachInbox(
+  viewerWalletAddress?: string | null
+): Promise<DashboardView["inbox"] | null> {
   if (!hasDatabaseUrl) {
     return [];
   }
@@ -783,6 +990,12 @@ async function loadDbCoachInbox(): Promise<DashboardView["inbox"] | null> {
             slug: true,
             title: true,
             status: true,
+            isPublic: true,
+            maker: {
+              select: {
+                walletAddress: true,
+              },
+            },
           },
         },
       },
@@ -807,7 +1020,11 @@ async function loadDbCoachInbox(): Promise<DashboardView["inbox"] | null> {
     >();
 
     for (const record of records) {
-      if (record.commitment.status !== "ACTIVE") {
+      const isVisibleToViewer = viewerWalletAddress
+        ? sameWalletAddress(record.commitment.maker.walletAddress, viewerWalletAddress)
+        : record.commitment.isPublic;
+
+      if (record.commitment.status !== "ACTIVE" || !isVisibleToViewer) {
         continue;
       }
 
@@ -901,14 +1118,22 @@ export async function getExploreCommitments(
   return filterExploreCommitments(commitments, filters).slice(0, limit);
 }
 
-export async function getCommitmentBySlug(slug?: string) {
-  const commitment = await loadDbCommitment(slug);
+export async function getCommitmentAccessBySlug(slug?: string) {
+  return loadDbCommitmentAccess(slug);
+}
+
+export async function getCommitmentBySlug(
+  slug?: string,
+  viewerWalletAddress?: string | null
+) {
+  const commitment = await loadDbCommitment(slug, viewerWalletAddress);
   return commitment;
 }
 
 export async function getProfileByWallet(identifier?: string) {
   const profiles = await loadDbProfiles();
-  const normalized = identifier?.trim().toLowerCase();
+  const normalized = identifier?.trim();
+  const normalizedHandle = normalized?.toLowerCase();
 
   if (!normalized) {
     return profiles[0] ?? null;
@@ -916,9 +1141,9 @@ export async function getProfileByWallet(identifier?: string) {
 
   const profile = profiles.find(
     (entry) =>
-      entry.walletAddress.toLowerCase() === normalized ||
-      entry.handle.toLowerCase() === normalized ||
-      entry.handle.toLowerCase() === `@${normalized}`
+      sameWalletAddress(entry.walletAddress, normalized) ||
+      entry.handle.toLowerCase() === normalizedHandle ||
+      entry.handle.toLowerCase() === `@${normalizedHandle}`
   );
 
   if (profile) return profile;
@@ -926,12 +1151,14 @@ export async function getProfileByWallet(identifier?: string) {
   return null;
 }
 
-export async function getDashboardSummary() {
-  const commitments = await getExploreCommitments({ limit: 9 });
+export async function getDashboardSummary(viewerWalletAddress?: string | null) {
+  const commitments = viewerWalletAddress
+    ? await loadDbDashboardCommitments(viewerWalletAddress)
+    : await getExploreCommitments({ limit: 9 });
   const active = commitments.filter((commitment) => commitment.status === "ACTIVE");
   const completed = commitments.filter((commitment) => commitment.status === "COMPLETED");
   const failed = commitments.filter((commitment) => commitment.status === "FAILED");
-  const inbox = await loadDbCoachInbox();
+  const inbox = await loadDbCoachInbox(viewerWalletAddress);
 
   return {
     active,
