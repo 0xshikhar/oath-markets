@@ -1,9 +1,8 @@
 "use client";
 
 import type { ChangeEvent, ReactNode } from "react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { Address } from "@solana/kit";
 import { Badge } from "@/components/ui/badge";
@@ -27,16 +26,47 @@ import { useSolanaClient } from "../lib/solana-client-context";
 import type { DashboardView, CommitmentSummary } from "@/lib/oath-data";
 import { useCluster } from "./cluster-context";
 
+type DashboardApiResponse =
+  | {
+      ok: true;
+      summary: DashboardView;
+    }
+  | {
+      ok: false;
+      error?: string;
+    };
+
 type DashboardClientProps = {
   summary: DashboardView;
 };
+
+async function fetchDashboardSummary(
+  walletAddress?: string | null
+): Promise<DashboardView> {
+  const response = await fetch(
+    `/api/dashboard/summary${
+      walletAddress ? `?walletAddress=${encodeURIComponent(walletAddress)}` : ""
+    }`,
+    { cache: "no-store" }
+  );
+  const data = (await response.json()) as DashboardApiResponse;
+
+  if (!response.ok || !data.ok) {
+    throw new Error(
+      !data.ok && "error" in data
+        ? data.error ?? "Unable to load dashboard"
+        : "Unable to load dashboard"
+    );
+  }
+
+  return data.summary;
+}
 
 export function DashboardClient({ summary }: DashboardClientProps) {
   const { wallet, signer } = useWallet();
   const { send } = useSendTransaction();
   const { cluster } = useCluster();
   const solanaClient = useSolanaClient();
-  const router = useRouter();
   const [selectedCommitment, setSelectedCommitment] =
     useState<CommitmentSummary | null>(null);
   const [proofText, setProofText] = useState("");
@@ -45,9 +75,85 @@ export function DashboardClient({ summary }: DashboardClientProps) {
   const [proofImageUrl, setProofImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
+  const [dashboardState, setDashboardState] = useState<{
+    walletAddress?: string;
+    summary: DashboardView;
+  }>({
+    summary,
+  });
   const [isPending, startTransition] = useTransition();
 
   const walletAddress = wallet?.account.address;
+  const dashboardSummary =
+    walletAddress && dashboardState.walletAddress === walletAddress
+      ? dashboardState.summary
+      : summary;
+  const isSummaryLoading =
+    Boolean(walletAddress) && dashboardState.walletAddress !== walletAddress;
+
+  const refreshSummary = async () => {
+    if (!walletAddress) {
+      return;
+    }
+
+    const nextSummary = await fetchDashboardSummary(walletAddress);
+    setDashboardState({ walletAddress, summary: nextSummary });
+  };
+
+  useEffect(() => {
+    if (!walletAddress) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const nextSummary = await fetchDashboardSummary(walletAddress);
+        if (!cancelled) {
+          setDashboardState({ walletAddress, summary: nextSummary });
+        }
+      } catch {
+        if (!cancelled) {
+          setDashboardState({
+            walletAddress,
+            summary: { active: [], completed: [], failed: [], inbox: [] },
+          });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [walletAddress]);
+
+  if (!walletAddress) {
+    return (
+      <Card className="border-oath-border bg-card">
+        <CardContent className="space-y-4 p-6">
+          <p className="text-sm text-muted-foreground">
+            Connect your wallet to view your private commitments, proof inbox, and coach threads.
+          </p>
+          <Button asChild className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
+            <Link href="/create">Open create page</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isSummaryLoading) {
+    return (
+      <Card className="border-oath-border bg-card">
+        <CardContent className="space-y-4 p-6">
+          <p className="text-sm text-muted-foreground">
+            Loading your private dashboard...
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const resetProofForm = () => {
     setSelectedCommitment(null);
@@ -162,7 +268,11 @@ export function DashboardClient({ summary }: DashboardClientProps) {
           fallbackDescription ? { description: fallbackDescription } : undefined
         );
         resetProofForm();
-        router.refresh();
+        try {
+          await refreshSummary();
+        } catch {
+          /* keep the successful proof result even if summary refresh fails */
+        }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Proof failed");
       }
@@ -187,7 +297,11 @@ export function DashboardClient({ summary }: DashboardClientProps) {
         if (!response.ok || !data.ok) throw new Error(data.error ?? "Reply failed");
         toast.success("Reply sent to the coach thread.");
         setReplyText((current) => ({ ...current, [slug]: "" }));
-        router.refresh();
+        try {
+          await refreshSummary();
+        } catch {
+          /* keep the successful reply result even if summary refresh fails */
+        }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Reply failed");
       }
@@ -215,9 +329,9 @@ export function DashboardClient({ summary }: DashboardClientProps) {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Metric label="Active" value={summary.active.length.toString()} />
-        <Metric label="Completed" value={summary.completed.length.toString()} />
-        <Metric label="Failed" value={summary.failed.length.toString()} />
+        <Metric label="Active" value={dashboardSummary.active.length.toString()} />
+        <Metric label="Completed" value={dashboardSummary.completed.length.toString()} />
+        <Metric label="Failed" value={dashboardSummary.failed.length.toString()} />
       </div>
 
       <Tabs defaultValue="active" className="space-y-4">
@@ -229,7 +343,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
         </TabsList>
 
         <TabsContent value="active" className="space-y-4">
-          {summary.active.map((commitment) => (
+          {dashboardSummary.active.map((commitment) => (
             <CommitmentRow
               key={commitment.slug}
               commitment={commitment}
@@ -317,8 +431,8 @@ export function DashboardClient({ summary }: DashboardClientProps) {
         </TabsContent>
 
         <TabsContent value="completed" className="grid gap-4 md:grid-cols-2">
-          {summary.completed.length > 0 ? (
-            summary.completed.map((commitment) => (
+          {dashboardSummary.completed.length > 0 ? (
+            dashboardSummary.completed.map((commitment) => (
               <CompletedRow key={commitment.slug} commitment={commitment} />
             ))
           ) : (
@@ -327,8 +441,8 @@ export function DashboardClient({ summary }: DashboardClientProps) {
         </TabsContent>
 
         <TabsContent value="failed" className="grid gap-4 md:grid-cols-2">
-          {summary.failed.length > 0 ? (
-            summary.failed.map((commitment) => (
+          {dashboardSummary.failed.length > 0 ? (
+            dashboardSummary.failed.map((commitment) => (
               <FailedRow key={commitment.slug} commitment={commitment} />
             ))
           ) : (
@@ -337,7 +451,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
         </TabsContent>
 
         <TabsContent value="coach" className="space-y-4">
-          {summary.inbox.map((thread) => (
+          {dashboardSummary.inbox.map((thread) => (
             <Card key={thread.slug} className="border-oath-border bg-card">
               <CardHeader>
                 <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">

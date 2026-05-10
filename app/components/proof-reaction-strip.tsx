@@ -31,6 +31,11 @@ type ReactionState = {
   viewerTypes: ReactionType[];
 };
 
+type ReactionAction = {
+  type: ReactionType;
+  remove: boolean;
+};
+
 type ReactionApiResponse =
   | {
       ok: true;
@@ -59,7 +64,8 @@ export function ProofReactionStrip({
       const response = await fetch(
         `/api/proofs/${proofId}/react${
           walletAddress ? `?walletAddress=${encodeURIComponent(walletAddress)}` : ""
-        }`
+        }`,
+        { cache: "no-store" }
       );
       if (response.status === 404) {
         return {
@@ -86,17 +92,18 @@ export function ProofReactionStrip({
   });
 
   const mutation = useMutation({
-    mutationFn: async (type: ReactionType) => {
+    mutationFn: async (action: ReactionAction) => {
       if (!walletAddress) {
         throw new Error("Connect a wallet to react.");
       }
 
       const response = await fetch(`/api/proofs/${proofId}/react`, {
-        method: "POST",
+        method: action.remove ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
+        cache: "no-store",
         body: JSON.stringify({
           walletAddress,
-          type,
+          type: action.type,
         }),
       });
       const data = (await response.json()) as ReactionApiResponse;
@@ -109,7 +116,7 @@ export function ProofReactionStrip({
 
       return data;
     },
-    onMutate: async (type) => {
+    onMutate: async (action) => {
       if (!walletAddress) return;
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<ReactionState>(queryKey) ?? {
@@ -117,15 +124,21 @@ export function ProofReactionStrip({
         viewerTypes: [],
       };
 
-      const nextTypes = previous.viewerTypes.includes(type)
-        ? previous.viewerTypes
-        : [...previous.viewerTypes, type];
+      const nextTypes = action.remove
+        ? previous.viewerTypes.filter((entry) => entry !== action.type)
+        : previous.viewerTypes.includes(action.type)
+          ? previous.viewerTypes
+          : [...previous.viewerTypes, action.type];
 
       queryClient.setQueryData<ReactionState>(queryKey, {
         counts: {
           ...previous.counts,
-          [reactionKey(type)]: previous.counts[reactionKey(type)] + 1,
-          total: previous.counts.total + 1,
+          [reactionKey(action.type)]: action.remove
+            ? Math.max(previous.counts[reactionKey(action.type)] - 1, 0)
+            : previous.counts[reactionKey(action.type)] + 1,
+          total: action.remove
+            ? Math.max(previous.counts.total - 1, 0)
+            : previous.counts.total + 1,
         },
         viewerTypes: nextTypes,
       });
@@ -177,7 +190,7 @@ export function ProofReactionStrip({
                   : "text-muted-foreground"
               }`}
               disabled={isLoading || !walletAddress}
-              onClick={() => mutation.mutate(reaction.type)}
+              onClick={() => mutation.mutate({ type: reaction.type, remove: active })}
               title={reaction.label}
             >
               <span className="mr-2 text-sm">{reaction.emoji}</span>
