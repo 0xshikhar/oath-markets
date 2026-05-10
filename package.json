@@ -3,6 +3,7 @@
   "scripts": {
     "anchor-build": "cd anchor && anchor build",
     "anchor-test": "cd anchor && anchor test --skip-deploy",
+    "deploy:devnet": "jiti scripts/deploy-devnet.ts",
     "build": "pnpm exec prisma generate && next build",
     "ci": "npm run build && npm run lint && npm run format:check",
     "codama:js": "codama run js",
@@ -15,6 +16,8 @@
     "lint": "eslint",
     "prisma:generate": "prisma generate",
     "setup": "npm run anchor-build && npm run codama:oath",
+    "smoke:devnet": "jiti scripts/devnet-smoke.ts",
+    "smoke:resolve:devnet": "jiti scripts/devnet-resolve-smoke.ts",
     "start": "next start"
   },
   "description": "Next.js, Tailwind, @solana/kit, Anchor vault program",
@@ -32,6 +35,9 @@
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
     "@prisma/client": "6.19.3",
+    "@privy-io/react-auth": "^3.23.1",
+    "@serwist/next": "^9.5.11",
+    "@solana-program/memo": "^0.11.0",
     "@solana/kit": "^6.3.0",
     "@solana/kit-client-rpc": "^0.7.0",
     "@solana/kit-plugin-rpc": "^0.7.0",
@@ -50,6 +56,7 @@
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "serwist": "^9.5.11",
     "shadcn": "^4.6.0",
     "sonner": "^2.0.7",
     "swr": "^2.2.0",
@@ -64,11 +71,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "baseline-browser-mapping": "^2.10.24",
+    "baseline-browser-mapping": "^2.10.29",
     "codama": "^1.5.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "prettier": "^3.6.2",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

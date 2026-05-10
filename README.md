@@ -130,7 +130,18 @@ The OATH program is intended for localnet/devnet development first. To deploy yo
    cd ..
    ```
 
-4. **Regenerate the client and restart**
+4. **Or use the one-shot devnet deploy script**
+
+   If you already have a base58 secret key in `PRIVATE_KEY` or `OATH_AUTHORITY_PRIVATE_KEY`:
+
+   ```bash
+   npm run deploy:devnet
+   ```
+
+   This script writes a temporary Anchor wallet, tops up devnet SOL when possible, builds both programs, deploys them to devnet, and runs a real smoke test.
+   If the devnet faucet is rate-limited, it will fail with a clear funding error instead of a raw Anchor panic.
+
+5. **Regenerate the client and restart**
    ```bash
    npm run setup   # Rebuilds the OATH program and regenerates the client
    npm run dev
