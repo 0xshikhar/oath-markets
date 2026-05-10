@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { coachToneLabel } from "@/lib/coach-tone";
 import { canViewCommitment, sameWalletAddress } from "@/lib/oath-access";
+import { verifyPrivateShareToken } from "@/lib/private-share";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LAMPORTS_PER_SOL = 1_000_000_000n;
@@ -598,7 +599,8 @@ async function loadDbCommitmentAccess(
 
 async function loadDbCommitment(
   slug?: string,
-  viewerWalletAddress?: string | null
+  viewerWalletAddress?: string | null,
+  accessToken?: string | null
 ): Promise<CommitmentDetail | null> {
   if (!slug || !hasDatabaseUrl) {
     return null;
@@ -606,7 +608,14 @@ async function loadDbCommitment(
 
   try {
     const access = await loadDbCommitmentAccess(slug);
-    if (!access || !canViewCommitment(access, viewerWalletAddress)) {
+    const sharedAccess = Boolean(
+      access &&
+        verifyPrivateShareToken(accessToken, {
+          slug: access.slug,
+          makerWalletAddress: access.makerWalletAddress,
+        })
+    );
+    if (!access || !canViewCommitment(access, viewerWalletAddress, sharedAccess)) {
       return null;
     }
 
@@ -1124,9 +1133,10 @@ export async function getCommitmentAccessBySlug(slug?: string) {
 
 export async function getCommitmentBySlug(
   slug?: string,
-  viewerWalletAddress?: string | null
+  viewerWalletAddress?: string | null,
+  accessToken?: string | null
 ) {
-  const commitment = await loadDbCommitment(slug, viewerWalletAddress);
+  const commitment = await loadDbCommitment(slug, viewerWalletAddress, accessToken);
   return commitment;
 }
 

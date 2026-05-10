@@ -15,23 +15,26 @@ export function sameWalletAddress(
 
 export function canViewCommitment(
   target: CommitmentAccessTarget,
-  viewerWalletAddress?: string | null
+  viewerWalletAddress?: string | null,
+  hasSharedAccess = false
 ) {
-  return target.isPublic || sameWalletAddress(target.makerWalletAddress, viewerWalletAddress);
+  return (
+    target.isPublic ||
+    hasSharedAccess ||
+    sameWalletAddress(target.makerWalletAddress, viewerWalletAddress)
+  );
 }
 
 export function canWriteCommitment(
   target: CommitmentAccessTarget,
-  viewerWalletAddress?: string | null
+  viewerWalletAddress?: string | null,
+  hasSharedAccess = false
 ) {
-  return target.isPublic || sameWalletAddress(target.makerWalletAddress, viewerWalletAddress);
-}
-
-export function canAccessPrivateCommitment(
-  target: CommitmentAccessTarget,
-  viewerWalletAddress?: string | null
-) {
-  return sameWalletAddress(target.makerWalletAddress, viewerWalletAddress);
+  return (
+    target.isPublic ||
+    hasSharedAccess ||
+    sameWalletAddress(target.makerWalletAddress, viewerWalletAddress)
+  );
 }
 
 export function commitmentVisibilityLabel(isPublic: boolean) {
