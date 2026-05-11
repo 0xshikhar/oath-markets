@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -120,13 +119,19 @@ model CoachMessage {
 }
 
 model Comment {
-  id            String     @id @default(cuid())
-  commitmentId  String
-  commitment    Commitment @relation(fields: [commitmentId], references: [id])
-  authorId      String
-  author        User       @relation(fields: [authorId], references: [id])
-  content       String
-  createdAt     DateTime   @default(now())
+  id               String      @id @default(cuid())
+  commitmentId     String
+  commitment       Commitment  @relation(fields: [commitmentId], references: [id])
+  authorId         String
+  author           User        @relation(fields: [authorId], references: [id])
+  parentCommentId  String?
+  parentComment    Comment?    @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies          Comment[]   @relation("CommentReplies")
+  content          String
+  createdAt        DateTime    @default(now())
+
+  @@index([commitmentId])
+  @@index([parentCommentId])
 }
 
 model Follow {

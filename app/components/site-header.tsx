@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const WalletButton = dynamic(
   () => import("./wallet-button").then((mod) => mod.WalletButton),
@@ -35,9 +36,8 @@ const ThemeToggle = dynamic(
 
 const navItems = [
   { href: "/explore", label: "Explore" },
-  { href: "/feed", label: "Feed" },
-  { href: "/create", label: "Create" },
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/#how-it-works", label: "How It Works" },
+  { href: "/feed", label: "Proof Feed" },
 ];
 
 export function SiteHeader() {
@@ -69,6 +69,12 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <Button
+            asChild
+            className="hidden rounded-[var(--radius)] bg-oath-black text-background hover:bg-oath-black/80 sm:inline-flex"
+          >
+            <Link href="/create">Start an Oath</Link>
+          </Button>
           <WalletButton />
         </div>
       </div>

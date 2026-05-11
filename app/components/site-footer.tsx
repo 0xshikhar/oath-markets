@@ -2,25 +2,26 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { GithubLogo, TwitterLogo, DiscordLogo, ArrowSquareOut } from "@phosphor-icons/react";
 
 const navSections = [
   {
     label: "Product",
     links: [
-      { href: "/explore", label: "Explore oaths" },
-      { href: "/create", label: "Create oath" },
-      { href: "/dashboard", label: "Dashboard" },
-      { href: "/feed", label: "Your feed" },
+      { href: "/explore", label: "Explore" },
+      { href: "/feed", label: "Proof Feed" },
+      { href: "/create", label: "Make an Oath" },
+      { href: "/dashboard", label: "My Dashboard" },
     ],
   },
   {
-    label: "Protocol",
+    label: "Ecosystem",
     links: [
-      { href: "/u/9xF3J1mN4qT8pW2yR5bH7cK6dL8vN3sA1eR6tG2uM9Q4", label: "Reputation" },
-      { href: "#", label: "Anchor program", external: true },
-      { href: "#", label: "API docs", external: true },
-      { href: "#", label: "Whitepaper", external: true },
+      { href: "/#how-it-works", label: "How It Works" },
+      { href: "#", label: "Built on Solana", external: true },
+      { href: "#", label: "Anchor Program", external: true },
+      { href: "#", label: "Reputation API", external: true },
     ],
   },
 ];
@@ -35,6 +36,27 @@ export function SiteFooter() {
   return (
     <footer className="relative z-10 border-t-2 border-oath-black bg-background">
       <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8">
+        {/* Final CTA Block */}
+        <div className="border-b border-oath-border py-10 lg:py-14">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
+              READY TO MAKE IT REAL?
+            </h2>
+            <p className="mt-4 text-base text-muted-foreground">
+              Stop keeping your goals private.
+              The blockchain doesn&apos;t forget, and neither will you.
+            </p>
+            <div className="mt-6">
+              <Button
+                asChild
+                className="rounded-lg bg-oath-gold text-black hover:bg-oath-gold/90"
+              >
+                <Link href="/create">Make Your First Oath →</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Top bar */}
         <div className="flex items-center justify-between gap-4 border-b border-oath-border py-8 lg:py-10">
           {/* Brand */}
@@ -51,10 +73,10 @@ export function SiteFooter() {
             </Link>
             <div className="space-y-1">
               <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-                Accountability infrastructure on Solana
+                Accountability infrastructure on Solana.
               </p>
               <p className="text-xs text-oath-muted-text">
-                Where follow-through is stake, reputation, and public record.
+                Your word, on-chain. Forever.
               </p>
             </div>
           </div>
@@ -152,7 +174,7 @@ export function SiteFooter() {
         {/* Bottom bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-oath-border py-5">
           <p className="text-[0.65rem] uppercase tracking-[0.16em] text-oath-muted-text">
-            &copy; {new Date().getFullYear()} OATH Protocol
+            © {new Date().getFullYear()} OATH · Built on Solana · Frontier 2026
           </p>
           <div className="flex items-center gap-4">
             <Link
@@ -167,9 +189,6 @@ export function SiteFooter() {
             >
               Terms
             </Link>
-            <span className="text-[0.65rem] uppercase tracking-[0.16em] text-oath-muted-text">
-              Frontier 2026
-            </span>
           </div>
         </div>
       </div>

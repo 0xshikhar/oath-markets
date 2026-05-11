@@ -8,13 +8,10 @@ import { CommitmentCard } from "./components/commitment-card";
 import { GridBackground } from "./components/grid-background";
 import { SiteFooter } from "./components/site-footer";
 import { SiteHeader } from "./components/site-header";
-import { getFeaturedCommitments, getLandingStats } from "@/lib/oath-data";
+import { getFeaturedCommitments } from "@/lib/oath-data";
 
 export default async function Home() {
-  const [stats, featuredCommitments] = await Promise.all([
-    getLandingStats(),
-    getFeaturedCommitments(3),
-  ]);
+  const featuredCommitments = await getFeaturedCommitments(3);
 
   const spotlight = featuredCommitments[0];
 
@@ -25,27 +22,25 @@ export default async function Home() {
         <SiteHeader />
 
         <main className="mx-auto max-w-[1140px] px-4 pb-20 pt-10 sm:px-6 lg:px-8">
+          {/* Hero Section */}
           <section className="grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
             <div className="space-y-8">
               <div className="space-y-6">
                 <Badge
                   variant="outline"
-                  className="border-oath-border bg-oath-surface/80 px-4 py-2 text-[0.68rem] uppercase tracking-[0.28em] text-oath-muted-text"
+                  className="border-oath-border bg-oath-surface/80 px-3 py-1.5 text-[0.68rem] uppercase tracking-[0.22em] text-oath-muted-text"
                 >
-                  Frontier 2026 · Public stakes on Solana
+                  ◆ Built on Solana · Frontier 2026
                 </Badge>
 
                 <div className="max-w-4xl space-y-5">
                   <h1 className="max-w-4xl text-5xl font-semibold tracking-[-0.05em] sm:text-6xl lg:text-7xl">
-                    Make a public oath.
-                    <span className="block text-oath-black">Stake real SOL.</span>
-                    Follow through in public.
+                    Your word, on-chain.
                   </h1>
                   <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                    OATH turns private intentions into a visible commitment
-                    economy. Create a goal, lock value in escrow, prove progress
-                    daily, and let believers, skeptics, and your own future self
-                    keep score.
+                    Set a goal. Stake SOL. Submit daily proof.
+                    Believers co-stake on your success — and the blockchain
+                    keeps score forever.
                   </p>
                 </div>
               </div>
@@ -54,140 +49,226 @@ export default async function Home() {
                 <Button
                   asChild
                   size="lg"
-                  className="rounded-[var(--radius)] bg-oath-gold px-6 text-black hover:bg-oath-gold/90"
+                  className="rounded-lg bg-oath-black px-6 text-background hover:bg-oath-black/80"
                 >
-                  <Link href="/create">Create an oath</Link>
+                  <Link href="/create">Make Your First Oath</Link>
                 </Button>
                 <Button
                   asChild
                   variant="outline"
                   size="lg"
-                  className="rounded-[var(--radius)] border-oath-border bg-oath-surface/70 px-6 text-foreground hover:bg-oath-surface"
+                  className="rounded-lg border-oath-border bg-transparent px-6 text-foreground hover:bg-oath-surface"
                 >
-                  <Link href="/explore">Browse live commitments</Link>
+                  <Link href="/#how-it-works">Watch How It Works →</Link>
                 </Button>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Active oaths" value={stats.activeOaths.toString()} />
-                <StatCard label="Total SOL staked" value={stats.totalStakeLabel} />
-                <StatCard label="Believers" value={stats.believers.toString()} />
-                <StatCard label="Completion rate" value={stats.completionRateLabel} />
+              {/* Pill badges row - replacing zero-state stats */}
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span className="rounded-full border border-oath-border bg-oath-surface/60 px-3 py-1">
+                  Fully on-chain
+                </span>
+                <span className="text-oath-muted-text">·</span>
+                <span className="rounded-full border border-oath-border bg-oath-surface/60 px-3 py-1">
+                  Anchor escrow
+                </span>
+                <span className="text-oath-muted-text">·</span>
+                <span className="rounded-full border border-oath-border bg-oath-surface/60 px-3 py-1">
+                  Reputation on-chain
+                </span>
+                <span className="text-oath-muted-text">·</span>
+                <span className="rounded-full border border-oath-border bg-oath-surface/60 px-3 py-1">
+                  AI coach included
+                </span>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-3">
-                <MiniPromise
-                  title="Public by default"
-                  description="Every oath has a shareable streak page, proof feed, and social pressure."
-                />
-                <MiniPromise
-                  title="AI coach included"
-                  description="Daily nudges are time-zone aware and built to keep momentum visible."
-                />
-                <MiniPromise
-                  title="Believer economy"
-                  description="Friends and fans can co-stake on your success and share the upside."
-                />
+              {/* Inline feature rows */}
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <span className="mt-1 text-oath-black">↳</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Public by default</p>
+                    <p className="text-sm text-muted-foreground">Your oath gets a shareable page the moment you create it.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="mt-1 text-oath-black">↳</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Believers co-stake</p>
+                    <p className="text-sm text-muted-foreground">Friends and fans back you with SOL and share the upside.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <span className="mt-1 text-oath-black">↳</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Reputation compounds</p>
+                    <p className="text-sm text-muted-foreground">Every completed oath adds to your permanent on-chain score.</p>
+                  </div>
+                </div>
               </div>
             </div>
 
+            {/* Hero Right Panel - Live Oath Preview Card */}
             <div className="space-y-4">
-              <Card className="overflow-hidden border-oath-border bg-oath-surface/85">
-                <CardHeader className="space-y-4 border-b border-oath-border p-6">
+              <Card className="overflow-hidden border-oath-border/60 bg-oath-surface/85 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+                <CardHeader className="space-y-4 border-b border-oath-border/60 p-6">
                   <div className="flex items-center justify-between">
-<Badge className="bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
-                      Live
+                    <Badge className="bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
+                      LIVE EXAMPLE OATH
                     </Badge>
-                    <span className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
+                    <span className="text-[10px] uppercase tracking-[0.22em] text-oath-muted-text">
                       Preview
                     </span>
                   </div>
-                  <CardTitle className="text-2xl leading-tight tracking-[-0.03em]">
-                    {spotlight?.title}
+                  <CardTitle className="text-xl leading-tight tracking-[-0.03em]">
+                    "Ship one public build note every day for 30 days"
                   </CardTitle>
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    {spotlight?.description}
-                  </p>
                 </CardHeader>
 
-                <CardContent className="space-y-6 p-6">
+                <CardContent className="space-y-5 p-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-oath-muted-text">
-                        Day {spotlight?.proofCount ?? 0} of {spotlight?.totalDays ?? 0}
+                        Day 3 of 30
                       </span>
                       <span className="font-mono text-oath-black">
-                        {spotlight?.progressPercent ?? 0}%
+                        10%
                       </span>
                     </div>
-                    <Progress value={spotlight?.progressPercent ?? 0} className="h-2" />
+                    <Progress value={10} className="h-2" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <MiniStat label="Maker" value={spotlight?.makerHandle ?? "-"} />
-                    <MiniStat label="Stake" value={spotlight?.stakeLabel ?? "-"} />
-                    <MiniStat
-                      label="Believers"
-                      value={spotlight?.believerCount.toString() ?? "-"}
-                    />
-                    <MiniStat label="Left" value={`${spotlight?.daysRemaining ?? 0} days`} />
-                  </div>
-
-                  <Separator className="bg-oath-border/70" />
-
-                  <div className="space-y-3">
-                    <p className="text-xs uppercase tracking-[0.24em] text-oath-muted-text">
-                      What the public page shows
-                    </p>
-                    <div className="grid gap-3">
-                      <SignalRow label="Escrow" value="SOL locked on-chain until resolution" />
-                      <SignalRow label="Proof feed" value="Daily text, photo, or link updates" />
-                      <SignalRow label="Reputation" value="Portable score that compounds across oaths" />
+                    <div className="rounded-lg border border-oath-border bg-background/40 p-3">
+                      <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">MAKER</p>
+                      <p className="mt-1 font-mono text-sm text-foreground">@shikhar.sol</p>
+                    </div>
+                    <div className="rounded-lg border border-oath-border bg-background/40 p-3">
+                      <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">STAKE</p>
+                      <p className="mt-1 font-mono text-sm text-foreground">0.10 SOL</p>
+                    </div>
+                    <div className="rounded-lg border border-oath-border bg-background/40 p-3">
+                      <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">BELIEVERS</p>
+                      <p className="mt-1 font-mono text-sm text-foreground">2</p>
+                    </div>
+                    <div className="rounded-lg border border-oath-border bg-background/40 p-3">
+                      <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">DAYS LEFT</p>
+                      <p className="mt-1 font-mono text-sm text-foreground">27</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-oath-border bg-oath-surface/70">
-                <CardContent className="grid gap-3 p-6 sm:grid-cols-3">
-                  <Pill label="Public page" value="SEO + OG ready" />
-                  <Pill label="Escrow" value="SOL locked" />
-                  <Pill label="Coach" value="Daily nudges" />
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className="w rounded-[var(--radius)] text-oath-muted-text hover:bg-oath-gold/10 hover:text-oath-black"
+                  >
+                    <Link href="/explore">View Public Page →</Link>
+                  </Button>
                 </CardContent>
               </Card>
             </div>
           </section>
 
-          <section className="mt-20 grid gap-4 md:grid-cols-3">
-            <SectionCard
-              index="01"
-              title="Make it public"
-              description="Write the oath, choose proof type, set stake, and publish a page anyone can share."
-            />
-            <SectionCard
-              index="02"
-              title="Prove it daily"
-              description="Submit proof, post progress, and keep the streak alive with visible pressure."
-            />
-            <SectionCard
-              index="03"
-              title="Earn reputation"
-              description="Complete the oath, resolve the escrow, and preserve a permanent on-chain reputation trail."
-            />
+          {/* How It Works Section */}
+          <section id="how-it-works" className="mt-24 scroll-mt-24">
+            <div className="space-y-8">
+              <div className="space-y-2">
+                <Badge
+                  variant="outline"
+                  className="border-oath-border bg-oath-surface/80 text-[0.68rem] uppercase tracking-[0.26em] text-oath-muted-text"
+                >
+                  HOW IT WORKS
+                </Badge>
+                <h2 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+                  Four steps. Fully on-chain.
+                </h2>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <HowItWorksStep
+                  index="01"
+                  title="Create Your Oath"
+                  description="Name your goal. Set a deadline. Choose your stake amount. Your oath page goes live the moment you connect your wallet."
+                />
+                <HowItWorksStep
+                  index="02"
+                  title="Lock Your Stake"
+                  description="SOL goes into an Anchor escrow vault on Solana. It stays locked until your deadline — win or lose."
+                />
+                <HowItWorksStep
+                  index="03"
+                  title="Prove It Daily"
+                  description="Submit a text update, photo, or link every day. Your proof feed is public and timestamped on-chain."
+                />
+                <HowItWorksStep
+                  index="04"
+                  title="Earn Your Reputation"
+                  description="Complete the oath → get 95% of your stake back + faith-fee yield. Fail → stake burns. Your Oath Score updates either way."
+                />
+              </div>
+            </div>
           </section>
 
-          <section className="mt-20 space-y-6">
+          {/* Believer Economy Section */}
+          <section className="mt-24">
+            <Card className="border-oath-border bg-oath-surface/80">
+              <CardContent className="grid gap-8 p-6 lg:grid-cols-[1.2fr_1fr] lg:gap-12 lg:p-10">
+                <div className="space-y-4">
+                  <Badge className="w-fit bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
+                    THE BELIEVER ECONOMY
+                  </Badge>
+                  <h2 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+                    Back someone you believe in.
+                    <span className="block">Earn when they follow through.</span>
+                  </h2>
+                  <p className="max-w-xl text-base leading-7 text-muted-foreground">
+                    Every public oath accepts co-stakers. Believers put up SOL,
+                    principal-protected, and earn a share of the faith fee
+                    when the maker completes. Your money comes back either way.
+                    Your yield depends on their follow-through.
+                  </p>
+                  <Button
+                    asChild
+                    className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
+                  >
+                    <Link href="/explore">Explore oaths to back →</Link>
+                  </Button>
+                </div>
+
+                <div className="grid gap-4">
+                  <BelieverFeature
+                    title="Principal Protected"
+                    description="Your SOL returns regardless of outcome."
+                  />
+                  <BelieverFeature
+                    title="Faith Fee Yield"
+                    description="Earn a portion of the completion pool."
+                  />
+                  <BelieverFeature
+                    title="Reputation Stake"
+                    description="Every belief you cast becomes part of your on-chain history too."
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Featured Commitments Section */}
+          <section className="mt-24 space-y-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div className="space-y-2">
                 <Badge
                   variant="outline"
                   className="border-oath-border bg-oath-surface/80 text-[0.68rem] uppercase tracking-[0.26em] text-oath-muted-text"
                 >
-                  Featured commitments
+                  FEATURED COMMITMENTS
                 </Badge>
                 <h2 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-                  The page where pressure becomes visible
+                  The page where pressure becomes visible.
                 </h2>
+                <p className="max-w-2xl text-base text-muted-foreground">
+                  Every oath is public. Every proof is timestamped. Every completion builds reputation.
+                </p>
               </div>
               <Button
                 asChild
@@ -204,97 +285,6 @@ export default async function Home() {
               ))}
             </div>
           </section>
-
-          <section className="mt-20 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <Card className="border-oath-border bg-oath-surface/80">
-              <CardHeader>
-<Badge className="w-fit bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
-            How it works
-          </Badge>
-                <CardTitle className="text-3xl tracking-[-0.03em]">
-                  Accountability that people can watch, fund, and verify
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm leading-7 text-muted-foreground">
-                <p>
-                  Private to-do lists fail because there is no social or financial
-                  consequence for disappearing. OATH makes the cost of quitting
-                  visible while making success something the entire network can
-                  rally around.
-                </p>
-                <p>
-                  The result is a product surface that is easy to share, easy to
-                  understand, and easy to extend into reputation, coach, and
-                  believer flows.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-oath-border bg-oath-surface/80">
-              <CardHeader>
-                <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
-                  Launch path
-                </Badge>
-                <CardTitle className="text-3xl tracking-[-0.03em]">
-                  What is wired next
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <LaunchRow
-                  label="Prisma Postgres"
-                  value="User, commitment, proof, belief, and coach tables"
-                />
-                <LaunchRow
-                  label="Create wizard"
-                  value="Wallet connect, World ID, stake, proof, and review"
-                />
-                <LaunchRow
-                  label="Public routes"
-                  value="/explore, /c/[slug], /u/[wallet], /dashboard"
-                />
-                <LaunchRow
-                  label="On-chain sync"
-                  value="Escrow vault, proof records, and reputation PDA"
-                />
-              </CardContent>
-            </Card>
-          </section>
-
-          <section className="mt-20">
-            <Card className="border-oath-border bg-oath-surface/80">
-              <CardContent className="grid gap-6 p-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-                <div className="space-y-3">
-                  <Badge className="w-fit bg-oath-green/10 text-oath-green hover:bg-oath-green/20">
-                    Believer CTA
-                  </Badge>
-                  <h2 className="text-3xl font-semibold tracking-[-0.03em]">
-                    Your friends are making oaths. Believe in them, and the upside
-                    is public too.
-                  </h2>
-                  <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-                    OATH is built for spectators as much as makers. The public page
-                    is the shared object, and the believer economy is what turns a
-                    personal goal into a social market.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-3 lg:justify-end">
-                <Button
-                  asChild
-                  className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
-                >
-                  <Link href="/feed">Watch the feed</Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="rounded-[var(--radius)] border-oath-border bg-background/40"
-                >
-                  <Link href="/create">Make your own oath</Link>
-                </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
         </main>
 
         <SiteFooter />
@@ -303,74 +293,7 @@ export default async function Home() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <Card className="border-oath-border bg-oath-surface/70">
-      <CardContent className="flex min-h-24 flex-col justify-between gap-2 p-4">
-        <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-          {label}
-        </p>
-        <p className="break-words text-2xl font-semibold leading-tight tracking-[-0.03em]">
-          {value}
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-      <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">
-        {label}
-      </p>
-      <p className="mt-2 break-words font-mono text-sm leading-5 text-foreground">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function Pill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-      <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">
-        {label}
-      </p>
-      <p className="mt-2 break-words text-sm leading-5 text-foreground">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function MiniPromise({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-[var(--radius)] border border-oath-border bg-oath-surface/60 p-5">
-      <p className="text-xs uppercase tracking-[0.24em] text-oath-black">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-    </div>
-  );
-}
-
-function SignalRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-      <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">
-        {label}
-      </p>
-      <p className="mt-2 break-words text-sm leading-6 text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function SectionCard({
+function HowItWorksStep({
   index,
   title,
   description,
@@ -380,29 +303,25 @@ function SectionCard({
   description: string;
 }) {
   return (
-    <Card className="border-oath-border bg-oath-surface/80">
-      <CardHeader className="space-y-4">
-        <span className="text-xs uppercase tracking-[0.3em] text-oath-black">
-          {index}
-        </span>
-        <CardTitle className="text-2xl tracking-[-0.03em]">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="text-sm leading-7 text-muted-foreground">
-        {description}
-      </CardContent>
-    </Card>
+    <div className="space-y-3 rounded-lg border border-oath-border bg-oath-surface/60 p-5">
+      <span className="text-2xl font-bold tracking-[-0.03em] text-oath-black">{index}</span>
+      <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-foreground">{title}</h3>
+      <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+    </div>
   );
 }
 
-function LaunchRow({ label, value }: { label: string; value: string }) {
+function BelieverFeature({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
-    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-      <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-        {label}
-      </p>
-      <p className="mt-2 break-words text-sm leading-6 text-foreground">
-        {value}
-      </p>
+    <div className="rounded-lg border border-oath-border bg-background/40 p-4">
+      <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
     </div>
   );
 }
