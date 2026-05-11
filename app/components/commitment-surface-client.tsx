@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import type { ChangeEvent } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { Address } from "@solana/kit";
@@ -15,8 +16,10 @@ import {
   findBelieverRecordPda,
   findReputationPda,
   getCoStakeBeliefInstructionAsync,
+  getSubmitProofInstructionAsync,
 } from "@/lib/generated/oath";
 import { sameWalletAddress } from "@/lib/oath-access";
+import { buildProofContentHash, bytesToHex } from "@/lib/proof-hash";
 import {
   getOathProgramUnavailableMessage,
   isOathProgramAvailable,
@@ -27,6 +30,7 @@ import { useWallet } from "../lib/wallet/context";
 import type { CommitmentDetail, CommentThreadNode } from "@/lib/oath-data";
 import { useCluster } from "./cluster-context";
 import { ProofReactionStrip } from "./proof-reaction-strip";
+import { CommitmentShareDialog } from "./share";
 
 type CommitmentSurfaceClientProps = {
   commitment: CommitmentDetail | null;
@@ -80,6 +84,13 @@ export function CommitmentSurfaceClient({
   const [isBelieving, setIsBelieving] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
   const [isGeneratingShareLink, setIsGeneratingShareLink] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [proofText, setProofText] = useState("");
+  const [publicNote, setPublicNote] = useState("");
+  const [proofImageFile, setProofImageFile] = useState<File | null>(null);
+  const [proofImageUrl, setProofImageUrl] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [fetchedCommitment, setFetchedCommitment] = useState<{
     walletAddress: string;
     commitment: CommitmentDetail;
@@ -212,6 +223,129 @@ export function CommitmentSurfaceClient({
     } finally {
       setIsBelieving(false);
     }
+  };
+
+  const resetProofForm = () => {
+    setProofText("");
+    setPublicNote("");
+    setProofImageFile(null);
+    setProofImageUrl(null);
+    setIsUploadingImage(false);
+  };
+
+  const uploadProofImage = async (file: File) => {
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload/proof", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = (await response.json()) as {
+        ok: boolean;
+        imageUrl?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.ok || !data.imageUrl) {
+        throw new Error(data.error ?? "Image upload failed");
+      }
+
+      setProofImageUrl(data.imageUrl);
+      toast.success("Image uploaded to Cloudinary.");
+    } catch (error) {
+      setProofImageFile(null);
+      setProofImageUrl(null);
+      toast.error(error instanceof Error ? error.message : "Image upload failed");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleProofImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setProofImageFile(file);
+    setProofImageUrl(null);
+
+    if (file) {
+      void uploadProofImage(file);
+    }
+  };
+
+  const submitProof = () => {
+    if (!activeCommitment) return;
+    startTransition(async () => {
+      try {
+        if (!walletAddress || !signer || !activeCommitment.onchainAddress) {
+          throw new Error("Connect your wallet to submit proof on-chain.");
+        }
+
+        if (proofImageFile && !proofImageUrl) {
+          throw new Error("Wait for the image upload to finish before submitting.");
+        }
+
+        const dayNumber = activeCommitment.proofCount + 1;
+        const textContent = proofText.trim();
+        const contentHash = await buildProofContentHash({
+          commitmentSlug: activeCommitment.slug,
+          dayNumber,
+          textContent,
+          imageUrl: proofImageUrl,
+          publicNote: publicNote.trim() || null,
+        });
+        let onchainTxSig: string | undefined;
+        let fallbackDescription: string | undefined;
+
+        if (walletAddress && signer && activeCommitment.onchainAddress) {
+          const oathProgramAvailable = await isOathProgramAvailable(solanaClient);
+
+          if (oathProgramAvailable) {
+            const commitmentAccount = activeCommitment.onchainAddress as Address;
+            const instruction = await getSubmitProofInstructionAsync({
+              maker: signer,
+              commitmentAccount,
+              dayNumber,
+              contentHash,
+            });
+            onchainTxSig = await send({ instructions: [instruction] });
+          } else {
+            fallbackDescription = getOathProgramUnavailableMessage(cluster);
+          }
+        }
+
+        const response = await fetch("/api/proofs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            commitmentSlug: activeCommitment.slug,
+            walletAddress,
+            dayNumber,
+            textContent,
+            publicNote: publicNote.trim(),
+            imageUrl: proofImageUrl,
+            contentHash: bytesToHex(contentHash),
+            onchainTxSig,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error ?? "Proof failed");
+        toast.success(
+          onchainTxSig ? "Proof submitted on-chain." : "Proof submitted.",
+          fallbackDescription ? { description: fallbackDescription } : undefined
+        );
+        resetProofForm();
+        try {
+          await syncCommitment();
+        } catch {
+          /* keep the successful proof result even if summary refresh fails */
+        }
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Proof failed");
+      }
+    });
   };
 
   const submitComment = async (parentCommentId?: string) => {
@@ -433,6 +567,80 @@ export function CommitmentSurfaceClient({
                 </div>
               </DialogContent>
             </Dialog>
+            {isMaker ? (
+              <Dialog onOpenChange={(open) => !open && resetProofForm()}>
+                <DialogTrigger asChild>
+                  <Button className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
+                    Submit today&apos;s proof
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Day {activeCommitment.proofCount + 1} proof</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
+                      <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
+                        Goal
+                      </p>
+                      <p className="mt-2 text-sm text-foreground">{activeCommitment.title}</p>
+                    </div>
+                    <Textarea
+                      value={proofText}
+                      onChange={(event) => setProofText(event.target.value)}
+                      placeholder="Write your proof here"
+                      className="min-h-32 border-oath-border bg-background/50"
+                    />
+                    <Input
+                      value={publicNote}
+                      onChange={(event) => setPublicNote(event.target.value)}
+                      placeholder="Optional public note"
+                      className="border-oath-border bg-background/50"
+                    />
+                    <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">Photo proof</p>
+                          <p className="text-xs text-oath-muted-text">
+                            Upload an image and we store it in Cloudinary.
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="border-oath-border text-oath-muted-text">
+                          Optional
+                        </Badge>
+                      </div>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProofImageChange}
+                        className="border-oath-border bg-background/50 file:rounded-none file:border-0 file:bg-transparent file:text-xs file:font-medium file:text-foreground"
+                      />
+                      {isUploadingImage ? (
+                        <p className="text-xs text-oath-muted-text">Uploading image...</p>
+                      ) : proofImageUrl ? (
+                        <p className="text-xs text-oath-green">Image uploaded and ready to attach.</p>
+                      ) : proofImageFile ? (
+                        <p className="text-xs text-oath-muted-text">{proofImageFile.name}</p>
+                      ) : (
+                        <p className="text-xs text-oath-muted-text">No image selected.</p>
+                      )}
+                    </div>
+                    <Button
+                      onClick={submitProof}
+                      disabled={
+                        isPending ||
+                        isUploadingImage ||
+                        proofText.trim().length === 0 ||
+                        !walletAddress
+                      }
+                      className="w-full rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
+                    >
+                      {isPending ? "Submitting..." : "Submit proof"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            ) : null}
             {!isPrivateCommitment || accessToken ? (
               <Button
                 variant="outline"
@@ -452,11 +660,11 @@ export function CommitmentSurfaceClient({
               </Button>
             ) : null}
             <Button
-              asChild
               variant="ghost"
               className="rounded-[var(--radius)] text-oath-black hover:bg-oath-gold/10 hover:text-oath-black"
+              onClick={() => setShareOpen(true)}
             >
-              <Link href={`/api/og/${activeCommitment.slug}`}>OG card</Link>
+              Share
             </Button>
           </div>
         </CardContent>
@@ -529,31 +737,33 @@ export function CommitmentSurfaceClient({
           </CardContent>
         </Card>
 
-        <Card className="border-oath-border bg-card">
-          <CardHeader>
-            <Badge className="w-fit bg-oath-green/10 text-oath-green hover:bg-oath-green/20">
-              Coach notes
-            </Badge>
-            <CardTitle className="text-2xl tracking-[-0.03em]">Immediate response</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {activeCommitment.coachMessages.map((message) => (
-              <div
-                key={message.createdAtLabel + message.content}
-                className="rounded-[var(--radius)] border-l-4 border-oath-gold bg-background/40 p-4"
-              >
-                <p className="text-sm leading-7 text-muted-foreground">{message.content}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        {isMaker ? (
+          <Card className="border-oath-border bg-card">
+            <CardHeader>
+              <Badge className="w-fit bg-oath-green/10 text-oath-green hover:bg-oath-green/20">
+                Coach notes
+              </Badge>
+              <CardTitle className="text-2xl tracking-[-0.03em]">Immediate response</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {activeCommitment.coachMessages.map((message) => (
+                <div
+                  key={message.createdAtLabel + message.content}
+                  className="rounded-[var(--radius)] border-l-4 border-oath-gold bg-background/40 p-4"
+                >
+                  <p className="text-sm leading-7 text-muted-foreground">{message.content}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card className="border-oath-border bg-card">
           <CardHeader>
             <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
               Comments
             </Badge>
-            <CardTitle className="text-2xl tracking-[-0.03em]">What the crowd is saying</CardTitle>
+            <CardTitle className="text-2xl tracking-[-0.03em]">What the tribe is saying</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
@@ -604,6 +814,14 @@ export function CommitmentSurfaceClient({
           </CardContent>
         </Card>
       </div>
+
+      {activeCommitment && (
+        <CommitmentShareDialog
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          commitment={activeCommitment}
+        />
+      )}
     </section>
   );
 }
@@ -636,9 +854,8 @@ function CommentThread({
 
   return (
     <div
-      className={`rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 ${
-        depth > 0 ? "ml-4 border-l-2 border-l-oath-gold/40 pl-4" : ""
-      }`}
+      className={`rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 ${depth > 0 ? "ml-4 border-l-2 border-l-oath-gold/40 pl-4" : ""
+        }`}
     >
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium text-foreground">{node.authorName}</p>
