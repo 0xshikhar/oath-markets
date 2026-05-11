@@ -1,18 +1,26 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { PublicPageShell } from "../components/public-page-shell";
+import { Badge } from "@/components/ui/badge";
 import { FeedClient } from "../components/feed-client";
+import { SiteHeader } from "../components/site-header";
+import { SiteFooter } from "../components/site-footer";
+import { PublicPageShell } from "../components/public-page-shell";
 
 export default function FeedPage() {
   return (
     <PublicPageShell
-      eyebrow="Feed"
-      title="Your commitment activity stream."
-      description="Follow the makers you care about, watch proofs land in real time, and react to the updates that matter."
-      actions={
-        <Button asChild variant="outline" className="rounded-[var(--radius)] border-oath-border bg-background/40">
-          <Link href="/explore">Discover makers</Link>
-        </Button>
+      eyebrow="Arena Dashboard"
+      title={
+        <>
+          THE <span className="text-oath-gold italic">ARENA</span> <br />
+          DASHBOARD.
+        </>
+      }
+      description={
+        <>
+          The heartbeat of the commitment economy. <br />
+          Watch the world stake, commit, and resolve in real-time.
+        </>
       }
     >
       <FeedClient />
