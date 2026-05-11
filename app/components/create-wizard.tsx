@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { normalizeCoachTone } from "@/lib/coach-tone";
 import { useCluster } from "./cluster-context";
+import { WorldIdVerificationField } from "./world-id-verification-field";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import { useSolanaClient } from "../lib/solana-client-context";
 import { useWallet } from "../lib/wallet/context";
@@ -74,7 +75,6 @@ type CommitmentCreateRequest = {
   slashDestination: WizardState["slashDestination"];
   timezone: string;
   notifyTime: string;
-  worldIdVerified: boolean;
   onchainAddress?: string;
   onchainTxSig?: string;
 };
@@ -159,7 +159,6 @@ export function CreateWizard() {
           slashDestination: state.slashDestination,
           timezone: state.timezone,
           notifyTime: state.notifyTime,
-          worldIdVerified: state.worldIdVerified,
         };
 
         let fallbackDescription: string | undefined;
@@ -406,20 +405,11 @@ export function CreateWizard() {
                     Private commitments are hidden from public surfaces until you choose to share them.
                   </p>
                 </Field>
-                <Field label="World ID" hint="Verified human badge for the public page">
-                  <Button
-                    type="button"
-                    variant={state.worldIdVerified ? "default" : "outline"}
-                    className={
-                      state.worldIdVerified
-                        ? "bg-oath-green text-black hover:bg-oath-green/90"
-                        : "border-oath-border bg-background/40"
-                    }
-                    onClick={() => update("worldIdVerified", !state.worldIdVerified)}
-                  >
-                    {state.worldIdVerified ? "Verified" : "Verify human"}
-                  </Button>
-                </Field>
+                <WorldIdVerificationField
+                  walletAddress={walletAddress}
+                  verified={state.worldIdVerified}
+                  onVerifiedChange={(verified) => update("worldIdVerified", verified)}
+                />
               </>
             )}
 
@@ -463,9 +453,20 @@ export function CreateWizard() {
                         {walletAddress ?? "Connect a wallet to publish"}
                       </p>
                     </div>
-                    <Badge className="bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
-                      {state.visibility}
-                    </Badge>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <Badge className="bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
+                        {state.visibility}
+                      </Badge>
+                      <Badge
+                        className={
+                          state.worldIdVerified
+                            ? "bg-oath-green/10 text-oath-green hover:bg-oath-green/20"
+                            : "bg-oath-surface/70 text-oath-muted-text hover:bg-oath-surface"
+                        }
+                      >
+                        {state.worldIdVerified ? "Verified human" : "World ID not verified"}
+                      </Badge>
+                    </div>
                   </div>
                   <Separator className="my-4 bg-oath-border" />
                   <p className="text-lg font-medium leading-7">{state.title}</p>

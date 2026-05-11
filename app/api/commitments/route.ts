@@ -19,7 +19,6 @@ type CommitmentCreateInput = {
   slashDestination?: "BURN" | "DONATE" | "TREASURY";
   timezone?: string;
   notifyTime?: string;
-  worldIdVerified?: boolean;
   onchainAddress?: string;
   onchainTxSig?: string;
 };
@@ -94,7 +93,6 @@ export async function POST(request: Request) {
         walletAddress: makerWalletAddress,
         timezone: payload.timezone ?? "UTC",
         notifyTime: payload.notifyTime ?? "09:00",
-        worldIdVerified: payload.worldIdVerified ?? false,
       },
       update: {
         timezone: payload.timezone ?? "UTC",
