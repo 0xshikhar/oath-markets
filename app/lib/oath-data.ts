@@ -25,7 +25,7 @@ type CommitmentRecord = {
   description: string | null;
   category: string;
   proofType: string;
-  coachTone: string;
+  coachTone?: string | null;
   stakeAmountLamports: bigint;
   startDate: Date;
   endDate: Date;
@@ -83,7 +83,7 @@ type DbCommitmentSummaryRecord = {
   description: string | null;
   category: string;
   proofType: string;
-  coachTone: string;
+  coachTone?: string | null;
   stakeAmountLamports: bigint;
   startDate: Date;
   endDate: Date;
@@ -360,6 +360,7 @@ function getDisplayName(user: UserRecord) {
 }
 
 function mapCommitment(commitment: CommitmentRecord): CommitmentSummary {
+  const coachTone = commitment.coachTone ?? "SUPPORTIVE_FRIEND";
   const now = Date.now();
   const daysRemaining = Math.max(
     Math.ceil((commitment.endDate.getTime() - now) / DAY_MS),
@@ -378,8 +379,8 @@ function mapCommitment(commitment: CommitmentRecord): CommitmentSummary {
     description: commitment.description ?? "",
     category: commitment.category,
     proofType: commitment.proofType,
-    coachTone: commitment.coachTone,
-    coachToneLabel: coachToneLabel(commitment.coachTone),
+    coachTone,
+    coachToneLabel: coachToneLabel(coachTone),
     makerName: getDisplayName(commitment.maker),
     makerHandle: toHandle(commitment.maker),
     makerWalletAddress: commitment.maker.walletAddress,
@@ -501,7 +502,6 @@ async function loadDbCommitments(limit = 6): Promise<CommitmentSummary[]> {
         description: true,
         category: true,
         proofType: true,
-        coachTone: true,
         stakeAmountLamports: true,
         startDate: true,
         endDate: true,

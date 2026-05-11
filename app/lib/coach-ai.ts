@@ -5,6 +5,7 @@ const DEFAULT_REGION = "us-east-1";
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 export type CoachEvent =
+  | "OATH_CREATED"
   | "DAILY_CHECKIN"
   | "PROOF_SUBMITTED"
   | "STREAK_RISK"
@@ -110,6 +111,8 @@ function getToneGuidance(value?: string | null) {
 
 function getEventGuidance(event: CoachEvent) {
   switch (event) {
+    case "OATH_CREATED":
+      return "Welcome the user, acknowledge the new oath, and set the tone for the journey ahead.";
     case "PROOF_SUBMITTED":
       return "Acknowledge the proof, reinforce the streak, and name the next concrete action.";
     case "STREAK_RISK":
@@ -182,7 +185,8 @@ function buildFallbackCoachMessage(context: CoachMessageContext) {
     NEUTRAL_ANALYST: "Here is the read.",
   }[tone];
 
-  const eventLead = {
+const eventLead = {
+    OATH_CREATED: "Your commitment is now live.",
     DAILY_CHECKIN: `Day ${context.dayNumber} is active.`,
     PROOF_SUBMITTED: "The proof is logged.",
     STREAK_RISK: "You are behind pace.",
@@ -193,6 +197,8 @@ function buildFallbackCoachMessage(context: CoachMessageContext) {
   }[event];
 
   const action = {
+    OATH_CREATED:
+      "Submit your first proof today to build the streak and set the tone.",
     DAILY_CHECKIN:
       paceDelta < 0
         ? "Shrink the next action and make the next proof visible today."
