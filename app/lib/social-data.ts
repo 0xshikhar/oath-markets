@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getExploreCommitments, type CommitmentSummary, type ReactionCounts } from "@/lib/oath-data";
 
 type SocialPrismaClient = typeof prisma & {
-  reaction: NonNullable<typeof prisma.reaction>;
+  reaction?: NonNullable<typeof prisma.reaction>;
   proof: NonNullable<typeof prisma.proof>;
   commitment: NonNullable<typeof prisma.commitment>;
   user: NonNullable<typeof prisma.user>;
@@ -235,7 +235,7 @@ export async function getHotCommitments(limit = 3): Promise<HotCommitment[]> {
   const since = new Date(Date.now() - DAY_MS);
   const reactionDelegate = socialPrisma.reaction;
 
-  if (typeof reactionDelegate.findMany !== "function") {
+  if (typeof reactionDelegate?.findMany !== "function") {
     return commitments
       .map((commitment) => ({
         ...commitment,

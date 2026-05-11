@@ -113,13 +113,7 @@ export async function POST(request: Request) {
       commitmentId: commitment.id,
       authorId: user.id,
       content,
-      ...(parentCommentId
-        ? {
-            parentComment: {
-              connect: { id: parentCommentId },
-            },
-          }
-        : {}),
+      parentCommentId: parentCommentId ?? undefined,
     },
   });
 

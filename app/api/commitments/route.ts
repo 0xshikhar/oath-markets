@@ -135,13 +135,13 @@ export async function POST(request: Request) {
     const shareUrl = createdCommitment.isPublic
       ? null
       : buildPrivateShareUrl(
-          new URL(request.url).origin,
-          commitment.slug,
-          createPrivateShareToken({
-            slug: commitment.slug,
-            makerWalletAddress,
-          })
-        );
+        new URL(request.url).origin,
+        commitment.slug,
+        createPrivateShareToken({
+          slug: commitment.slug,
+          makerWalletAddress,
+        })
+      );
 
     return NextResponse.json({
       ok: true,

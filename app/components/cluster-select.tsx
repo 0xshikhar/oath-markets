@@ -32,9 +32,7 @@ export function ClusterSelect() {
                 ? "#22c55e"
                 : cluster === "devnet"
                   ? "#3b82f6"
-                  : cluster === "testnet"
-                    ? "#eab308"
-                    : "#a3a3a3",
+                  : "#a3a3a3",
           }}
         />
         {cluster}
@@ -62,9 +60,7 @@ export function ClusterSelect() {
                         ? "#22c55e"
                         : c === "devnet"
                           ? "#3b82f6"
-                          : c === "testnet"
-                            ? "#eab308"
-                            : "#a3a3a3",
+                          : "#a3a3a3",
                   }}
                 />
                 {c}

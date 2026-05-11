@@ -18,12 +18,12 @@ import {
 import {
   address,
   getAddressEncoder,
-  getTransactionEncoder,
   isAddress,
   signatureBytes,
   type Address,
   type TransactionSigner,
 } from "@solana/kit";
+import { createWalletSigner } from "./signer";
 import type {
   WalletAccount,
   WalletConnectorMetadata,
@@ -210,25 +210,25 @@ function WalletProviderImpl({
       return undefined;
     }
 
-    return {
-      address: wallet.account.address,
-      signAndSendTransactions: async (transactions) => {
-        const encoder = getTransactionEncoder();
-
-        return Promise.all(
-          transactions.map(async (tx) => {
-            const wireBytes = new Uint8Array(
-              encoder.encode(tx as Parameters<(typeof encoder)["encode"]>[0])
-            );
-            const result = await signAndSendTransaction({
-              transaction: wireBytes,
-              wallet: rawWallet,
-            });
-            return signatureBytes(result.signature);
-          })
-        );
+    return createWalletSigner(
+      {
+        account: wallet.account,
+        connector: wallet.connector,
+        disconnect: wallet.disconnect,
+        signTransaction: async (transaction: Uint8Array) => {
+          const result = await rawWallet.signTransaction({ transaction });
+          return new Uint8Array(result.signedTransaction);
+        },
+        sendTransaction: async (transaction: Uint8Array) => {
+          const result = await signAndSendTransaction({
+            transaction,
+            wallet: rawWallet,
+          });
+          return signatureBytes(result.signature);
+        },
       },
-    };
+      "solana:devnet"
+    );
   }, [signAndSendTransaction, wallet]);
 
   const status: WalletStatus = useMemo(() => {

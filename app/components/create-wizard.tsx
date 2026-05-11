@@ -12,15 +12,9 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { normalizeCoachTone } from "@/lib/coach-tone";
-import { useCluster } from "./cluster-context";
 import { WorldIdVerificationField } from "./world-id-verification-field";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
-import { useSolanaClient } from "../lib/solana-client-context";
 import { useWallet } from "../lib/wallet/context";
-import {
-  getOathProgramUnavailableMessage,
-  isOathProgramAvailable,
-} from "@/lib/oath-program";
 import type { CommitmentSummary } from "@/lib/oath-data";
 import {
   SlashDestination,
@@ -107,8 +101,6 @@ const defaultState: WizardState = {
 export function CreateWizard() {
   const router = useRouter();
   const { wallet, signer } = useWallet();
-  const { cluster } = useCluster();
-  const solanaClient = useSolanaClient();
   const { send, isSending } = useSendTransaction();
   const [step, setStep] = useState(0);
   const [isPending, startTransition] = useTransition();
@@ -161,47 +153,39 @@ export function CreateWizard() {
           notifyTime: state.notifyTime,
         };
 
-        let fallbackDescription: string | undefined;
-
         if (walletAddress && signer) {
-          const oathProgramAvailable = await isOathProgramAvailable(solanaClient);
+          const commitmentId = crypto.getRandomValues(new Uint8Array(32));
+          const totalDays = state.durationDays;
+          const requiredProofDays = state.durationDays;
+          const startTimestamp = Math.floor(Date.now() / 1000);
+          const endTimestamp = startTimestamp + totalDays * 24 * 60 * 60;
+          const stakeLamports = BigInt(
+            Math.round(state.stakeAmountSol * 1_000_000_000)
+          );
+          const commitmentAccount = await findCommitmentAccountPda({
+            maker: walletAddress,
+            commitmentId,
+          });
+          const instruction = await getCreateCommitmentInstructionAsync({
+            maker: signer,
+            commitmentId,
+            totalDays,
+            requiredProofDays,
+            startTimestamp,
+            endTimestamp,
+            stakeLamports,
+            slashDestination:
+              {
+                BURN: SlashDestination.Burn,
+                DONATE: SlashDestination.Donate,
+                TREASURY: SlashDestination.Treasury,
+              }[state.slashDestination],
+            isPublic: state.visibility === "PUBLIC",
+          });
+          const signature = await send({ instructions: [instruction] });
 
-          if (oathProgramAvailable) {
-            const commitmentId = crypto.getRandomValues(new Uint8Array(32));
-            const totalDays = state.durationDays;
-            const requiredProofDays = state.durationDays;
-            const startTimestamp = Math.floor(Date.now() / 1000);
-            const endTimestamp = startTimestamp + totalDays * 24 * 60 * 60;
-            const stakeLamports = BigInt(
-              Math.round(state.stakeAmountSol * 1_000_000_000)
-            );
-            const commitmentAccount = await findCommitmentAccountPda({
-              maker: walletAddress,
-              commitmentId,
-            });
-            const instruction = await getCreateCommitmentInstructionAsync({
-              maker: signer,
-              commitmentId,
-              totalDays,
-              requiredProofDays,
-              startTimestamp,
-              endTimestamp,
-              stakeLamports,
-              slashDestination:
-                {
-                  BURN: SlashDestination.Burn,
-                  DONATE: SlashDestination.Donate,
-                  TREASURY: SlashDestination.Treasury,
-                }[state.slashDestination],
-              isPublic: state.visibility === "PUBLIC",
-            });
-            const signature = await send({ instructions: [instruction] });
-
-            payload.onchainAddress = String(commitmentAccount[0]);
-            payload.onchainTxSig = signature;
-          } else {
-            fallbackDescription = getOathProgramUnavailableMessage(cluster);
-          }
+          payload.onchainAddress = String(commitmentAccount[0]);
+          payload.onchainTxSig = signature;
         }
 
         const response = await fetch("/api/commitments", {
@@ -233,11 +217,9 @@ export function CreateWizard() {
           payload.onchainTxSig ? "Your oath is live on-chain." : "Your oath is live.",
           data.privateShareUrl
             ? {
-                description: "Private share link copied to your clipboard.",
-              }
-            : fallbackDescription
-              ? { description: fallbackDescription }
-              : undefined
+              description: "Private share link copied to your clipboard.",
+            }
+            : undefined
         );
         router.push(data.commitment.publicUrl);
       } catch (error) {
@@ -253,11 +235,10 @@ export function CreateWizard() {
           {steps.map((label, index) => (
             <Badge
               key={label}
-              className={`rounded-[var(--radius)] px-4 py-2 ${
-                index === step
+              className={`rounded-[var(--radius)] px-4 py-2 ${index === step
                   ? "bg-oath-gold/15 text-oath-black hover:bg-oath-gold/20"
                   : "bg-oath-surface/70 text-oath-muted-text hover:bg-oath-surface"
-              }`}
+                }`}
               variant="outline"
             >
               {index + 1}. {label}
