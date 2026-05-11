@@ -9,8 +9,7 @@ export async function POST(
   const { token } = await params;
 
   try {
-    const body = await request.json();
-    const { walletAddress } = body;
+    await request.json();
 
     const challenge = await prisma.challenge.findUnique({
       where: { token },

@@ -115,9 +115,10 @@ export async function PATCH(request: Request) {
 
     console.log(`[Profile API] Successfully updated profile for ${walletAddress}`);
     return NextResponse.json({ ok: true, user: serializedUser });
-  } catch (error: any) {
-    console.error(`[Profile API] Error updating profile for ${requestWalletAddress}:`, error);
-    if (error.code === 'P2002') {
+  } catch (error: unknown) {
+    const err = error as { code?: string; message?: string };
+    console.error(`[Profile API] Error updating profile for ${requestWalletAddress}:`, err);
+    if (err.code === 'P2002') {
       return NextResponse.json({ ok: false, error: "Username already taken" }, { status: 400 });
     }
     return NextResponse.json({ ok: false, error: "Failed to update profile" }, { status: 500 });

@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const socialPrisma = prisma as any;
+type SocialPrismaClient = typeof prisma & {
+  follow: NonNullable<typeof prisma.follow>;
+  user: NonNullable<typeof prisma.user>;
+};
+
+const socialPrisma = prisma as SocialPrismaClient;
 
 type FollowInput = {
   followerWallet?: string;
