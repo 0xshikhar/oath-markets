@@ -14,7 +14,7 @@ type AppPrismaClient = PrismaClient & Partial<
 >;
 
 const globalForPrisma = globalThis as unknown as {
-  prisma?: AppPrismaClient;
+  prisma_v2?: AppPrismaClient;
 };
 
 const requiredDelegates = [
@@ -44,16 +44,16 @@ function hasRequiredDelegates(client: AppPrismaClient) {
 }
 
 export const prisma = (() => {
-  const cached = globalForPrisma.prisma;
+  const cached = globalForPrisma.prisma_v2;
   const client = cached && hasRequiredDelegates(cached) ? cached : createPrismaClient();
 
   if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = client;
+    globalForPrisma.prisma_v2 = client;
   }
 
   return client;
 })();
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prisma_v2 = prisma;
 }

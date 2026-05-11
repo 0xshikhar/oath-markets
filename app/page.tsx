@@ -141,7 +141,7 @@ export default async function Home() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-lg border border-oath-border bg-background/40 p-3">
                       <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">MAKER</p>
-                      <p className="mt-1 font-mono text-sm text-foreground">@shikhar.sol</p>
+                      <p className="mt-1 font-mono text-sm text-foreground">@0xshikhar.sol</p>
                     </div>
                     <div className="rounded-lg border border-oath-border bg-background/40 p-3">
                       <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">STAKE</p>

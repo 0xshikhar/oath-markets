@@ -28,13 +28,13 @@ import { useCluster } from "./cluster-context";
 
 type DashboardApiResponse =
   | {
-      ok: true;
-      summary: DashboardView;
-    }
+    ok: true;
+    summary: DashboardView;
+  }
   | {
-      ok: false;
-      error?: string;
-    };
+    ok: false;
+    error?: string;
+  };
 
 type DashboardClientProps = {
   summary: DashboardView;
@@ -44,8 +44,7 @@ async function fetchDashboardSummary(
   walletAddress?: string | null
 ): Promise<DashboardView> {
   const response = await fetch(
-    `/api/dashboard/summary${
-      walletAddress ? `?walletAddress=${encodeURIComponent(walletAddress)}` : ""
+    `/api/dashboard/summary${walletAddress ? `?walletAddress=${encodeURIComponent(walletAddress)}` : ""
     }`,
     { cache: "no-store" }
   );
@@ -167,26 +166,36 @@ export function DashboardClient({ summary }: DashboardClientProps) {
   const uploadProofImage = async (file: File) => {
     setIsUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/upload/proof", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = (await response.json()) as {
-        ok: boolean;
-        imageUrl?: string;
-        error?: string;
-      };
-
-      if (!response.ok || !data.ok || !data.imageUrl) {
-        throw new Error(data.error ?? "Image upload failed");
+      const sigResponse = await fetch("/api/upload/signature", { method: "POST" });
+      const sigData = await sigResponse.json();
+      
+      if (!sigResponse.ok || !sigData.ok) {
+        throw new Error(sigData.error ?? "Failed to get upload signature");
       }
 
-      setProofImageUrl(data.imageUrl);
-      toast.success("Image uploaded to Cloudinary.");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", sigData.folder);
+      formData.append("api_key", sigData.apiKey);
+      formData.append("timestamp", sigData.timestamp.toString());
+      formData.append("signature", sigData.signature);
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const uploadResult = await uploadResponse.json();
+
+      if (!uploadResponse.ok || !uploadResult.secure_url) {
+        throw new Error(uploadResult.error?.message ?? "Image upload to Cloudinary failed");
+      }
+
+      setProofImageUrl(uploadResult.secure_url);
+      toast.success("Image uploaded successfully.");
     } catch (error) {
       setProofImageFile(null);
       setProofImageUrl(null);
@@ -235,12 +244,14 @@ export function DashboardClient({ summary }: DashboardClientProps) {
 
           if (oathProgramAvailable) {
             const commitmentAccount = selectedCommitment.onchainAddress as Address;
+            console.log(`Submitting proof for Day ${dayNumber} to ${commitmentAccount}`);
             const instruction = await getSubmitProofInstructionAsync({
               maker: signer,
               commitmentAccount,
               dayNumber,
               contentHash,
             });
+            console.log("Instruction generated:", instruction);
             onchainTxSig = await send({ instructions: [instruction] });
           } else {
             fallbackDescription = getOathProgramUnavailableMessage(cluster);
@@ -355,7 +366,10 @@ export function DashboardClient({ summary }: DashboardClientProps) {
                   }
                 >
                   <DialogTrigger asChild>
-                    <Button className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
+                    <Button 
+                      disabled={commitment.status !== "ACTIVE" || commitment.proofCount >= commitment.totalDays}
+                      className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
+                    >
                       Submit today&apos;s proof
                     </Button>
                   </DialogTrigger>
@@ -387,7 +401,7 @@ export function DashboardClient({ summary }: DashboardClientProps) {
                           <div>
                             <p className="text-sm font-medium text-foreground">Photo proof</p>
                             <p className="text-xs text-oath-muted-text">
-                              Upload an image and we store it in Cloudinary.
+                              Upload an image as proof
                             </p>
                           </div>
                           <Badge variant="outline" className="border-oath-border text-oath-muted-text">

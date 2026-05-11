@@ -236,27 +236,53 @@ export function CommitmentSurfaceClient({
   const uploadProofImage = async (file: File) => {
     setIsUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/upload/proof", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = (await response.json()) as {
-        ok: boolean;
-        imageUrl?: string;
-        error?: string;
-      };
-
-      if (!response.ok || !data.ok || !data.imageUrl) {
-        throw new Error(data.error ?? "Image upload failed");
+      console.log("[Cloudinary] Step 1: Requesting signature from server...");
+      const sigResponse = await fetch("/api/upload/signature", { method: "POST" });
+      console.log("[Cloudinary] Signature response status:", sigResponse.status);
+      
+      const sigData = await sigResponse.json();
+      console.log("[Cloudinary] Signature response data:", sigData);
+      
+      if (!sigResponse.ok || !sigData.ok) {
+        throw new Error(sigData.error ?? "Failed to get upload signature");
       }
 
-      setProofImageUrl(data.imageUrl);
-      toast.success("Image uploaded to Cloudinary.");
+      console.log("[Cloudinary] Step 2: Uploading to Cloudinary...", {
+        cloudName: sigData.cloudName,
+        folder: sigData.folder,
+        fileSize: file.size,
+        fileType: file.type
+      });
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", sigData.folder);
+      formData.append("api_key", sigData.apiKey);
+      formData.append("timestamp", sigData.timestamp.toString());
+      formData.append("signature", sigData.signature);
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      console.log("[Cloudinary] Upload response status:", uploadResponse.status);
+
+      const uploadResult = await uploadResponse.json();
+      console.log("[Cloudinary] Upload response data:", uploadResult);
+
+      if (!uploadResponse.ok || !uploadResult.secure_url) {
+        throw new Error(uploadResult.error?.message ?? "Image upload to Cloudinary failed");
+      }
+
+      setProofImageUrl(uploadResult.secure_url);
+      console.log("[Cloudinary] SUCCESS! URL:", uploadResult.secure_url);
+      toast.success("Image uploaded successfully.");
     } catch (error) {
+      console.error("[Cloudinary] ERROR:", error);
       setProofImageFile(null);
       setProofImageUrl(null);
       toast.error(error instanceof Error ? error.message : "Image upload failed");
@@ -304,12 +330,14 @@ export function CommitmentSurfaceClient({
 
           if (oathProgramAvailable) {
             const commitmentAccount = activeCommitment.onchainAddress as Address;
+            console.log(`Submitting proof for Day ${dayNumber} to ${commitmentAccount}`);
             const instruction = await getSubmitProofInstructionAsync({
               maker: signer,
               commitmentAccount,
               dayNumber,
               contentHash,
             });
+            console.log("Instruction generated:", instruction);
             onchainTxSig = await send({ instructions: [instruction] });
           } else {
             fallbackDescription = getOathProgramUnavailableMessage(cluster);
@@ -567,7 +595,7 @@ export function CommitmentSurfaceClient({
                 </div>
               </DialogContent>
             </Dialog>
-            {isMaker ? (
+            {isMaker && activeCommitment.status === "ACTIVE" && activeCommitment.proofCount < activeCommitment.totalDays ? (
               <Dialog onOpenChange={(open) => !open && resetProofForm()}>
                 <DialogTrigger asChild>
                   <Button className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
@@ -602,8 +630,7 @@ export function CommitmentSurfaceClient({
                         <div>
                           <p className="text-sm font-medium text-foreground">Photo proof</p>
                           <p className="text-xs text-oath-muted-text">
-                            Upload an image and we store it in Cloudinary.
-                          </p>
+                            Upload an image as proof                          </p>
                         </div>
                         <Badge variant="outline" className="border-oath-border text-oath-muted-text">
                           Optional

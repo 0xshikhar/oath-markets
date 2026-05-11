@@ -62,12 +62,13 @@ type ProofAccessRecord = {
 };
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as ProofInput;
-  const slug = body.commitmentSlug?.trim();
-  const walletAddress = body.walletAddress?.trim();
-  if (!slug) {
-    return NextResponse.json({ ok: false, error: "commitmentSlug is required" }, { status: 400 });
-  }
+  try {
+    const body = (await request.json()) as ProofInput;
+    const slug = body.commitmentSlug?.trim();
+    const walletAddress = body.walletAddress?.trim();
+    if (!slug) {
+      return NextResponse.json({ ok: false, error: "commitmentSlug is required" }, { status: 400 });
+    }
 
   if (!process.env.DATABASE_URL?.trim()) {
     return NextResponse.json(
@@ -249,4 +250,11 @@ export async function POST(request: Request) {
     commitment: updatedCommitment,
     coachMessage,
   });
+  } catch (error) {
+    console.error("Proof submission error:", error);
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Internal Server Error during proof submission" },
+      { status: 500 }
+    );
+  }
 }
