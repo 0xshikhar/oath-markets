@@ -13,7 +13,6 @@ import type {
   CommitmentSummary,
   CommitmentDetail,
   DbCommitmentSummaryRecord,
-  DbCommitmentDetailRecord,
   ExploreCommitmentFilters,
 } from "./types";
 
@@ -84,7 +83,7 @@ export function mapCommitmentDetail(commitment: CommitmentRecord): CommitmentDet
       createdAtLabel: formatDateLabel(proof.createdAt),
       reactionCounts: proof.reactionCounts ?? emptyReactionCounts(),
     })),
-    believers: (commitment as any).beliefs?.map((belief: any) => ({
+    believers: (commitment as CommitmentRecord & { beliefs: Array<{ believer: { walletAddress: string; username: string | null; name: string | null; avatarUrl: string | null; }; stakeAmountLamports: bigint }> }).beliefs?.map((belief) => ({
       walletAddress: belief.believer.walletAddress,
       handle: toHandle(belief.believer),
       avatarUrl: belief.believer.avatarUrl,

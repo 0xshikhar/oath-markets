@@ -55,7 +55,7 @@ export function emptyReactionCounts(): ReactionCounts {
   };
 }
 
-export function toHandle(user: UserRecord) {
+export function toHandle(user: { username: string | null; walletAddress: string }) {
   return user.username ? `@${user.username}` : ellipsify(user.walletAddress, 4);
 }
 

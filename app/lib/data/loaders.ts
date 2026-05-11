@@ -16,8 +16,7 @@ import type {
   DbUserProfileRecord,
   DbCoachInboxMessageRecord,
   CommitmentRecord,
-  DbProofRecord,
-  RawCommentRecord,
+  UserRecord,
 } from "./types";
 
 const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
@@ -289,7 +288,7 @@ async function loadDbCommitment(
         id: comment.id,
         parentCommentId: comment.parentCommentId,
         authorName:
-          getDisplayName(comment.author as any),
+          getDisplayName(comment.author as unknown as UserRecord),
         content: comment.content,
         createdAt: comment.createdAt,
       })),
