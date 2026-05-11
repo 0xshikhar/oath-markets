@@ -28,20 +28,7 @@ const nextConfig: NextConfig = {
     "thread-stream",
     "isows",
   ],
-  // @solana/kit-plugin-payer's browser bundle has a spurious `import 'fs'`
-  // from the payerFromFile export. Stub it out for the client bundle.
-  turbopack: {
-    root: rootDir,
-    resolveAlias: {
-      fs: { browser: "./empty-module.js" },
-    },
-  },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = { ...config.resolve.fallback, fs: false };
-    }
-    return config;
-  },
+  turbopack: {},
 };
 
 export default withSerwist(nextConfig);
