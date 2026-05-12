@@ -2,7 +2,6 @@
 
 import type { ChangeEvent } from "react";
 import { useEffect, useState, useTransition } from "react";
-import Link from "next/link";
 import { toast } from "sonner";
 import type { Address } from "@solana/kit";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +19,7 @@ import {
 } from "@/lib/generated/oath";
 import { sameWalletAddress } from "@/lib/oath-access";
 import { buildProofContentHash, bytesToHex } from "@/lib/proof-hash";
+import { getNextOnchainProofDay } from "@/lib/proof-submission";
 import {
   getOathProgramUnavailableMessage,
   isOathProgramAvailable,
@@ -313,7 +313,11 @@ export function CommitmentSurfaceClient({
           throw new Error("Wait for the image upload to finish before submitting.");
         }
 
-        const dayNumber = activeCommitment.proofCount + 1;
+        const commitmentAccount = activeCommitment.onchainAddress as Address;
+        const { dayNumber, proofCount: onchainProofCount } = await getNextOnchainProofDay(
+          solanaClient.rpc,
+          commitmentAccount
+        );
         const textContent = proofText.trim();
         const contentHash = await buildProofContentHash({
           commitmentSlug: activeCommitment.slug,
@@ -329,8 +333,9 @@ export function CommitmentSurfaceClient({
           const oathProgramAvailable = await isOathProgramAvailable(solanaClient);
 
           if (oathProgramAvailable) {
-            const commitmentAccount = activeCommitment.onchainAddress as Address;
-            console.log(`Submitting proof for Day ${dayNumber} to ${commitmentAccount}`);
+            console.log(
+              `Submitting proof for Day ${dayNumber} to ${commitmentAccount} (on-chain proof count ${onchainProofCount})`
+            );
             const instruction = await getSubmitProofInstructionAsync({
               maker: signer,
               commitmentAccount,
@@ -530,8 +535,8 @@ export function CommitmentSurfaceClient({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-5">
-          <div className="space-y-3">
+        <CardContent className="space-y-6 pb-8">
+          <div className="space-y-4">
             <div className="flex items-center justify-between text-sm">
               <span className="text-oath-muted-text">
                 Day {activeCommitment.proofCount} of {activeCommitment.totalDays}
@@ -553,7 +558,7 @@ export function CommitmentSurfaceClient({
             <Metric label="Completion" value={activeCommitment.completionRatioLabel} />
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-4">
             <Dialog open={beliefOpen} onOpenChange={setBeliefOpen}>
               <DialogTrigger asChild>
                 <Button className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
@@ -705,7 +710,7 @@ export function CommitmentSurfaceClient({
             </Badge>
             <CardTitle className="text-2xl tracking-[-0.03em]">Daily updates</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pb-6">
             {activeCommitment.proofSamples.length > 0 ? (
               activeCommitment.proofSamples.map((proof) => (
                 <div
@@ -772,7 +777,7 @@ export function CommitmentSurfaceClient({
               </Badge>
               <CardTitle className="text-2xl tracking-[-0.03em]">Immediate response</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4 pb-6">
               {activeCommitment.coachMessages.map((message) => (
                 <div
                   key={message.createdAtLabel + message.content}
@@ -792,9 +797,9 @@ export function CommitmentSurfaceClient({
             </Badge>
             <CardTitle className="text-2xl tracking-[-0.03em]">What the tribe is saying</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-              <p className="text-sm font-medium">Add a comment</p>
+          <CardContent className="space-y-6 pb-8">
+            <div className="space-y-4 rounded-[var(--radius)] border border-oath-border bg-background/40 p-6">
+              <p className="text-base font-semibold">Add a comment</p>
               <Textarea
                 value={comment}
                 onChange={(event) => setComment(event.target.value)}
@@ -881,7 +886,7 @@ function CommentThread({
 
   return (
     <div
-      className={`rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 ${depth > 0 ? "ml-4 border-l-2 border-l-oath-gold/40 pl-4" : ""
+      className={`rounded-[var(--radius)] border border-oath-border bg-background/40 p-5 ${depth > 0 ? "ml-4 border-l-2 border-l-oath-gold/40 pl-4" : ""
         }`}
     >
       <div className="flex items-center justify-between gap-3">
@@ -960,7 +965,7 @@ function CommentThread({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
+    <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-5">
       <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">
         {label}
       </p>

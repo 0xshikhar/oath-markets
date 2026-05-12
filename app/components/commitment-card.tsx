@@ -37,9 +37,8 @@ export function CommitmentCard({ commitment, compact = false }: CommitmentCardPr
             </Badge>
           </div>
           <span
-            className={`rounded-[var(--radius)] border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em] ${
-              statusTone[commitment.status] ?? statusTone.ACTIVE
-            }`}
+            className={`rounded-[var(--radius)] border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em] ${statusTone[commitment.status] ?? statusTone.ACTIVE
+              }`}
           >
             {commitment.statusLabel}
           </span>

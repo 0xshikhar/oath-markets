@@ -16,6 +16,7 @@ import { buildProofContentHash, bytesToHex } from "@/lib/proof-hash";
 import {
   getSubmitProofInstructionAsync,
 } from "@/lib/generated/oath";
+import { getNextOnchainProofDay } from "@/lib/proof-submission";
 import {
   getOathProgramUnavailableMessage,
   isOathProgramAvailable,
@@ -227,7 +228,11 @@ export function DashboardClient({ summary }: DashboardClientProps) {
           throw new Error("Wait for the image upload to finish before submitting.");
         }
 
-        const dayNumber = selectedCommitment.proofCount + 1;
+        const commitmentAccount = selectedCommitment.onchainAddress as Address;
+        const { dayNumber, proofCount: onchainProofCount } = await getNextOnchainProofDay(
+          solanaClient.rpc,
+          commitmentAccount
+        );
         const textContent = proofText.trim();
         const contentHash = await buildProofContentHash({
           commitmentSlug: selectedCommitment.slug,
@@ -243,8 +248,9 @@ export function DashboardClient({ summary }: DashboardClientProps) {
           const oathProgramAvailable = await isOathProgramAvailable(solanaClient);
 
           if (oathProgramAvailable) {
-            const commitmentAccount = selectedCommitment.onchainAddress as Address;
-            console.log(`Submitting proof for Day ${dayNumber} to ${commitmentAccount}`);
+            console.log(
+              `Submitting proof for Day ${dayNumber} to ${commitmentAccount} (on-chain proof count ${onchainProofCount})`
+            );
             const instruction = await getSubmitProofInstructionAsync({
               maker: signer,
               commitmentAccount,

@@ -148,7 +148,7 @@ export async function POST(request: Request) {
 
   await prisma.commitment.update({
     where: { id: commitment.id },
-    data: { proofCount: { increment: 1 } },
+    data: { proofCount: proofDay },
   });
 
   const commitmentWithCoachContext = (await prisma.commitment.findUnique({
