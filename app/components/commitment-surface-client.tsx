@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { ChangeEvent } from "react";
 import { useEffect, useState, useTransition } from "react";
 import type { ReactNode } from "react";
@@ -707,7 +708,7 @@ export function CommitmentSurfaceClient({
 
                   {proof.imageUrl && (
                     <div className="rounded-[1.5rem] overflow-hidden border border-black/5 mb-6">
-                      <img src={proof.imageUrl} alt={`Day ${proof.dayNumber} proof`} className="w-full h-auto" />
+                      <Image src={proof.imageUrl} alt={`Day ${proof.dayNumber} proof`} width={800} height={450} className="w-full h-auto" />
                     </div>
                   )}
 
@@ -805,7 +806,7 @@ export function CommitmentSurfaceClient({
         {activeCommitment.coachMessages.length > 0 && (
           <Card className="border-black/5 bg-black p-8 rounded-[2rem] shadow-2xl">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-6 flex items-center gap-2">
-              <SealCheck size={14} weight="fill" className="text-oath-gold" /> AI Coach's Take
+              <SealCheck size={14} weight="fill" className="text-oath-gold" /> AI Coach&apos;s Take
             </h3>
             <div className="space-y-6">
               {activeCommitment.coachMessages.map((message, idx) => (

@@ -8,13 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { SiteHeader } from "../components/site-header";
-import { SiteFooter } from "../components/site-footer";
 import { toast } from "sonner";
+import Image from "next/image";
 import {
   UserCircle,
-  IdentificationBadge,
-  ChatCircleText,
   ShieldCheck,
   TrendUp,
   Users,
@@ -25,6 +22,26 @@ import { PublicPageShell } from "../components/public-page-shell";
 
 import Link from "next/link";
 
+type CommitmentItem = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  status: string;
+  totalDays: number;
+  proofCount: number;
+};
+
+type BeliefItem = {
+  id: string;
+  status: string;
+  stakeAmountLamports: bigint;
+  commitment: {
+    slug: string;
+    title: string;
+  };
+};
+
 type ProfileData = {
   id: string;
   walletAddress: string;
@@ -32,8 +49,8 @@ type ProfileData = {
   bio: string | null;
   avatarUrl: string | null;
   worldIdVerified: boolean;
-  commitments: any[];
-  beliefs: any[];
+  commitments: CommitmentItem[];
+  beliefs: BeliefItem[];
   _count: {
     commitments: number;
     beliefs: number;
@@ -123,7 +140,7 @@ export default function ProfilePage() {
         } else {
           toast.error(data.error || "Update failed");
         }
-      } catch (err) {
+      } catch (err: unknown) {
         toast.error("An error occurred");
       }
     });
@@ -202,7 +219,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-6 mb-4">
             <div className="size-24 sm:size-32 rounded-[2rem] border-2 border-oath-gold/30 overflow-hidden bg-white shadow-xl">
               {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={profile.username || ""} className="h-full w-full object-cover" />
+                <Image src={profile.avatarUrl} alt={profile.username || ""} width={128} height={128} className="h-full w-full object-cover" />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-4xl font-black text-black/10">
                   ?
@@ -326,7 +343,7 @@ export default function ProfilePage() {
                       </div>
                       <div className="space-y-2">
                         <p className="text-black font-bold uppercase tracking-widest">No Active Oaths</p>
-                        <p className="text-black/40 text-sm max-w-xs mx-auto">You haven't opened any arena markets yet. Your commitments will appear here.</p>
+                        <p className="text-black/40 text-sm max-w-xs mx-auto">You haven&apos;t opened any arena markets yet. Your commitments will appear here.</p>
                       </div>
                       <Button asChild className="h-12 px-8 bg-black text-white hover:bg-oath-gold hover:text-black rounded-xl text-xs font-black uppercase tracking-widest">
                         <a href="/create">Open Your First Market</a>
@@ -378,7 +395,7 @@ export default function ProfilePage() {
                       </div>
                       <div className="space-y-2">
                         <p className="text-black font-bold uppercase tracking-widest">No Co-Stakes</p>
-                        <p className="text-black/40 text-sm max-w-xs mx-auto">You aren't backing any makers yet. Support others to build network reputation.</p>
+                        <p className="text-black/40 text-sm max-w-xs mx-auto">You aren&apos;t backing any makers yet. Support others to build network reputation.</p>
                       </div>
                       <Button asChild className="h-12 px-8 bg-black text-white hover:bg-oath-gold hover:text-black rounded-xl text-xs font-black uppercase tracking-widest">
                         <a href="/explore">Discover Makers</a>
