@@ -18,6 +18,7 @@ const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
 type FeedUserRecord = {
   walletAddress: string;
   username: string | null;
+  name: string | null;
   avatarUrl: string | null;
   worldIdVerified: boolean;
 };
@@ -126,6 +127,32 @@ export type ActivityEvent =
     }
   | {
       id: string;
+      type: "FOLLOW";
+      createdAtIso: string;
+      actorName: string;
+      actorHandle: string;
+      actorAvatarUrl: string | null;
+      actorVerified: boolean;
+      targetName: string;
+      targetHandle: string;
+      publicUrl: string;
+    }
+  | {
+      id: string;
+      type: "CHALLENGE";
+      createdAtIso: string;
+      actorName: string;
+      actorHandle: string;
+      actorAvatarUrl: string | null;
+      actorVerified: boolean;
+      targetName: string;
+      targetHandle: string;
+      goal: string;
+      stakeLabel: string;
+      publicUrl: string;
+    }
+  | {
+      id: string;
       type: "RESOLVED";
       createdAtIso: string;
       actorName: string;
@@ -160,10 +187,11 @@ function formatSol(lamports: bigint) {
   return decimals ? `${whole}.${decimals.slice(0, 2)}` : whole.toString();
 }
 
-function getDisplayName(walletAddress: string, username: string | null) {
+function getDisplayName(walletAddress: string, username: string | null, name?: string | null) {
+  if (name) return name;
   if (username) {
-    const name = username.split(".")[0];
-    return name
+    const handleName = username.split(".")[0];
+    return handleName
       .split(/[-_]/)
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(" ");
@@ -300,9 +328,10 @@ export async function getHotCommitments(limit = 3): Promise<HotCommitment[]> {
 
 export async function getFeedEvents(
   walletAddress: string,
-  options: { limit?: number; cursor?: string | null } = {}
+  options: { limit?: number; cursor?: string | null; sort?: "latest" | "trending" } = {}
 ): Promise<FeedResult> {
   const limit = options.limit ?? 20;
+  const sort = options.sort ?? "latest";
   const fetchLimit = Math.max(limit * 3, 30);
   const before = options.cursor ? new Date(options.cursor) : null;
 
@@ -363,7 +392,7 @@ export async function getFeedEvents(
 
   const dateFilter = before ? { lt: before } : undefined;
 
-  const [commitments, proofs, beliefs, resolvedCommitments] = (await Promise.all([
+  const PromiseResult = (await Promise.all([
     socialPrisma.commitment.findMany({
       where: {
         makerId: { in: followingIds },
@@ -383,6 +412,7 @@ export async function getFeedEvents(
           select: {
             walletAddress: true,
             username: true,
+            name: true,
             avatarUrl: true,
             worldIdVerified: true,
           },
@@ -414,6 +444,7 @@ export async function getFeedEvents(
               select: {
                 walletAddress: true,
                 username: true,
+            name: true,
                 avatarUrl: true,
                 worldIdVerified: true,
               },
@@ -444,6 +475,7 @@ export async function getFeedEvents(
           select: {
             walletAddress: true,
             username: true,
+            name: true,
             avatarUrl: true,
             worldIdVerified: true,
           },
@@ -457,6 +489,7 @@ export async function getFeedEvents(
               select: {
                 walletAddress: true,
                 username: true,
+            name: true,
                 avatarUrl: true,
                 worldIdVerified: true,
               },
@@ -485,6 +518,70 @@ export async function getFeedEvents(
           select: {
             walletAddress: true,
             username: true,
+            name: true,
+            avatarUrl: true,
+            worldIdVerified: true,
+          },
+        },
+      },
+    }),
+    socialPrisma.follow.findMany({
+      where: {
+        followerId: { in: followingIds },
+        ...(dateFilter ? { createdAt: dateFilter } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: fetchLimit,
+      select: {
+        id: true,
+        createdAt: true,
+        follower: {
+          select: {
+            walletAddress: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+            worldIdVerified: true,
+          },
+        },
+        following: {
+          select: {
+            walletAddress: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+            worldIdVerified: true,
+          },
+        },
+      },
+    }),
+    socialPrisma.challenge.findMany({
+      where: {
+        challengerId: { in: followingIds },
+        ...(dateFilter ? { createdAt: dateFilter } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: fetchLimit,
+      select: {
+        id: true,
+        goal: true,
+        stakeSol: true,
+        token: true,
+        createdAt: true,
+        challenger: {
+          select: {
+            walletAddress: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+            worldIdVerified: true,
+          },
+        },
+        challenged: {
+          select: {
+            walletAddress: true,
+            username: true,
+            name: true,
             avatarUrl: true,
             worldIdVerified: true,
           },
@@ -496,7 +593,39 @@ export async function getFeedEvents(
     FeedProofRecord[],
     FeedBeliefRecord[],
     FeedResolvedCommitmentRecord[],
+    any[],
+    any[],
   ];
+
+  const [commitments, proofs, beliefs, resolvedCommitments] = PromiseResult;
+
+  const followsEvents = (PromiseResult[4] ?? []).map((f: any) => ({
+    id: `follow:${f.id}`,
+    type: "FOLLOW" as const,
+    createdAtIso: f.createdAt.toISOString(),
+    actorName: getDisplayName(f.follower.walletAddress, f.follower.username, f.follower.name),
+    actorHandle: toHandle(f.follower.walletAddress, f.follower.username),
+    actorAvatarUrl: f.follower.avatarUrl,
+    actorVerified: f.follower.worldIdVerified,
+    targetName: getDisplayName(f.following.walletAddress, f.following.username, f.following.name),
+    targetHandle: toHandle(f.following.walletAddress, f.following.username),
+    publicUrl: `/u/${f.following.walletAddress}`,
+  }));
+
+  const challengesEvents = (PromiseResult[5] ?? []).map((c: any) => ({
+    id: `challenge:${c.id}`,
+    type: "CHALLENGE" as const,
+    createdAtIso: c.createdAt.toISOString(),
+    actorName: getDisplayName(c.challenger.walletAddress, c.challenger.username, c.challenger.name),
+    actorHandle: toHandle(c.challenger.walletAddress, c.challenger.username),
+    actorAvatarUrl: c.challenger.avatarUrl,
+    actorVerified: c.challenger.worldIdVerified,
+    targetName: getDisplayName(c.challenged.walletAddress, c.challenged.username, c.challenged.name),
+    targetHandle: toHandle(c.challenged.walletAddress, c.challenged.username),
+    goal: c.goal,
+    stakeLabel: `${c.stakeSol} SOL`,
+    publicUrl: `/challenge/${c.token}`,
+  }));
 
   const events: ActivityEvent[] = [
     ...commitments.map((commitment) => ({
@@ -505,7 +634,8 @@ export async function getFeedEvents(
       createdAtIso: commitment.createdAt.toISOString(),
       actorName: getDisplayName(
         commitment.maker.walletAddress,
-        commitment.maker.username
+        commitment.maker.username,
+        commitment.maker.name
       ),
       actorHandle: toHandle(
         commitment.maker.walletAddress,
@@ -525,7 +655,8 @@ export async function getFeedEvents(
       createdAtIso: proof.createdAt.toISOString(),
       actorName: getDisplayName(
         proof.commitment.maker.walletAddress,
-        proof.commitment.maker.username
+        proof.commitment.maker.username,
+        proof.commitment.maker.name
       ),
       actorHandle: toHandle(
         proof.commitment.maker.walletAddress,
@@ -547,7 +678,8 @@ export async function getFeedEvents(
       createdAtIso: belief.createdAt.toISOString(),
       actorName: getDisplayName(
         belief.believer.walletAddress,
-        belief.believer.username
+        belief.believer.username,
+        belief.believer.name
       ),
       actorHandle: toHandle(
         belief.believer.walletAddress,
@@ -557,7 +689,8 @@ export async function getFeedEvents(
       actorVerified: belief.believer.worldIdVerified,
       targetName: getDisplayName(
         belief.commitment.maker.walletAddress,
-        belief.commitment.maker.username
+        belief.commitment.maker.username,
+        belief.commitment.maker.name
       ),
       targetHandle: toHandle(
         belief.commitment.maker.walletAddress,
@@ -576,7 +709,8 @@ export async function getFeedEvents(
         createdAtIso: createdAt.toISOString(),
         actorName: getDisplayName(
           commitment.maker.walletAddress,
-          commitment.maker.username
+          commitment.maker.username,
+          commitment.maker.name
         ),
         actorHandle: toHandle(
           commitment.maker.walletAddress,
@@ -591,16 +725,16 @@ export async function getFeedEvents(
         statusLabel: commitment.status === "COMPLETED" ? "Completed" : "Failed",
       };
     }),
+    ...followsEvents,
+    ...challengesEvents,
   ].sort((a, b) => {
-    const scoreDelta = rankFeedEvent(b) - rankFeedEvent(a);
-    if (scoreDelta !== 0) {
-      return scoreDelta;
+    if (sort === "trending") {
+      const scoreDelta = rankFeedEvent(b) - rankFeedEvent(a);
+      if (scoreDelta !== 0) return scoreDelta;
     }
 
     const timeDelta = new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime();
-    if (timeDelta !== 0) {
-      return timeDelta;
-    }
+    if (timeDelta !== 0) return timeDelta;
 
     return a.id.localeCompare(b.id);
   });
@@ -612,4 +746,343 @@ export async function getFeedEvents(
     nextCursor: sliced.length === limit ? sliced[sliced.length - 1]?.createdAtIso ?? null : null,
     followingCount: follows.length,
   };
+}
+export async function getGlobalActivity(limit = 10): Promise<ActivityEvent[]> {
+  if (!hasDatabaseUrl) return [];
+
+  const [commitments, proofs, beliefs] = await Promise.all([
+    socialPrisma.commitment.findMany({
+      where: { isPublic: true },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        slug: true,
+        title: true,
+        description: true,
+        stakeAmountLamports: true,
+        totalDays: true,
+        createdAt: true,
+        maker: {
+          select: {
+            walletAddress: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+            worldIdVerified: true,
+          },
+        },
+      },
+    }),
+    socialPrisma.proof.findMany({
+      where: { commitment: { isPublic: true } },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        dayNumber: true,
+        textContent: true,
+        publicNote: true,
+        createdAt: true,
+        commitment: {
+          select: {
+            slug: true,
+            title: true,
+            maker: {
+              select: {
+                walletAddress: true,
+                username: true,
+            name: true,
+                avatarUrl: true,
+                worldIdVerified: true,
+              },
+            },
+          },
+        },
+        reactions: {
+          select: { type: true },
+        },
+      },
+    }),
+    socialPrisma.belief.findMany({
+      where: { commitment: { isPublic: true } },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        stakeAmountLamports: true,
+        createdAt: true,
+        believer: {
+          select: {
+            walletAddress: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+            worldIdVerified: true,
+          },
+        },
+        commitment: {
+          select: {
+            slug: true,
+            title: true,
+            maker: {
+              select: {
+                walletAddress: true,
+                username: true,
+            name: true,
+                avatarUrl: true,
+                worldIdVerified: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const events: ActivityEvent[] = [
+    ...commitments.map((c) => ({
+      id: `c:${c.slug}`,
+      type: "NEW_OATH" as const,
+      createdAtIso: c.createdAt.toISOString(),
+      actorName: getDisplayName(c.maker.walletAddress, c.maker.username, c.maker.name),
+      actorHandle: toHandle(c.maker.walletAddress, c.maker.username),
+      actorAvatarUrl: c.maker.avatarUrl,
+      actorVerified: c.maker.worldIdVerified,
+      title: c.title,
+      description: c.description ?? "",
+      publicUrl: `/c/${c.slug}`,
+      stakeLabel: `${formatSol(c.stakeAmountLamports)} SOL`,
+      totalDays: c.totalDays,
+    })),
+    ...proofs.map((p) => ({
+      id: `p:${p.id}`,
+      type: "NEW_PROOF" as const,
+      createdAtIso: p.createdAt.toISOString(),
+      actorName: getDisplayName(p.commitment.maker.walletAddress, p.commitment.maker.username, p.commitment.maker.name),
+      actorHandle: toHandle(p.commitment.maker.walletAddress, p.commitment.maker.username),
+      actorAvatarUrl: p.commitment.maker.avatarUrl,
+      actorVerified: p.commitment.maker.worldIdVerified,
+      title: p.commitment.title,
+      description: "",
+      publicUrl: `/c/${p.commitment.slug}`,
+      dayNumber: p.dayNumber,
+      excerpt: p.textContent ?? p.publicNote ?? "Proof posted.",
+      proofId: p.id,
+      reactionCounts: mapReactionCounts(p.reactions),
+    })),
+    ...beliefs.map((b) => ({
+      id: `b:${b.createdAt.toISOString()}`,
+      type: "BELIEVER" as const,
+      createdAtIso: b.createdAt.toISOString(),
+      actorName: getDisplayName(b.believer.walletAddress, b.believer.username),
+      actorHandle: toHandle(b.believer.walletAddress, b.believer.username),
+      actorAvatarUrl: b.believer.avatarUrl,
+      actorVerified: b.believer.worldIdVerified,
+      targetName: getDisplayName(b.commitment.maker.walletAddress, b.commitment.maker.username, b.commitment.maker.name),
+      targetHandle: toHandle(b.commitment.maker.walletAddress, b.commitment.maker.username),
+      title: b.commitment.title,
+      description: "",
+      publicUrl: `/c/${b.commitment.slug}`,
+      stakeLabel: `${formatSol(b.stakeAmountLamports)} SOL`,
+    })),
+  ].sort((a, b) => new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime());
+
+  return events.slice(0, limit);
+}
+
+export type SocialPulseResult = {
+  notifications: Array<{
+    id: string;
+    type: "FOLLOW" | "BELIEVER" | "CHEER";
+    createdAtIso: string;
+    actorName: string;
+    actorHandle: string;
+    actorAvatarUrl: string | null;
+    actorVerified: boolean;
+    title: string;
+    publicUrl: string;
+  }>;
+  believerInsights: Array<{
+    walletAddress: string;
+    handle: string;
+    avatarUrl: string | null;
+    reputationScore: string;
+    totalStakedLabel: string;
+    beliefCount: number;
+  }>;
+  totalReactionsReceived: number;
+};
+
+export async function getSocialPulse(walletAddress: string): Promise<SocialPulseResult> {
+  if (!hasDatabaseUrl) {
+    return { notifications: [], believerInsights: [], totalReactionsReceived: 0 };
+  }
+
+  const user = await socialPrisma.user.findUnique({
+    where: { walletAddress },
+    select: { id: true },
+  });
+
+  if (!user) return { notifications: [], believerInsights: [], totalReactionsReceived: 0 };
+
+  const [followers, beliefs, cheers, totalReactionsReceived] = await Promise.all([
+    socialPrisma.follow.findMany({
+      where: { followingId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        follower: {
+          select: {
+            walletAddress: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+            worldIdVerified: true,
+          },
+        },
+      },
+    }),
+    socialPrisma.belief.findMany({
+      where: {
+        commitment: { makerId: user.id },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        believer: {
+          select: {
+            walletAddress: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+            worldIdVerified: true,
+          },
+        },
+        commitment: {
+          select: {
+            title: true,
+            slug: true,
+          },
+        },
+      },
+    }),
+    socialPrisma.cheer.findMany({
+      where: {
+        commitment: { makerId: user.id },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        author: {
+          select: {
+            walletAddress: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+            worldIdVerified: true,
+          },
+        },
+        commitment: {
+          select: {
+            title: true,
+            slug: true,
+          },
+        },
+      },
+    }),
+    socialPrisma.reaction.count({
+      where: {
+        proof: {
+          commitment: {
+            makerId: user.id,
+          },
+        },
+      },
+    }),
+  ]);
+
+  const notifications = [
+    ...followers.map((f) => ({
+      id: `f:${f.id}`,
+      type: "FOLLOW" as const,
+      createdAtIso: f.createdAt.toISOString(),
+      actorName: getDisplayName(f.follower.walletAddress, f.follower.username, f.follower.name),
+      actorHandle: toHandle(f.follower.walletAddress, f.follower.username),
+      actorAvatarUrl: f.follower.avatarUrl,
+      actorVerified: f.follower.worldIdVerified,
+      title: "followed you",
+      publicUrl: `/u/${f.follower.walletAddress}`,
+    })),
+    ...beliefs.map((b) => ({
+      id: `b:${b.id}`,
+      type: "BELIEVER" as const,
+      createdAtIso: b.createdAt.toISOString(),
+      actorName: getDisplayName(b.believer.walletAddress, b.believer.username),
+      actorHandle: toHandle(b.believer.walletAddress, b.believer.username),
+      actorAvatarUrl: b.believer.avatarUrl,
+      actorVerified: b.believer.worldIdVerified,
+      title: `believed in ${b.commitment.title}`,
+      publicUrl: `/c/${b.commitment.slug}`,
+    })),
+    ...cheers.map((c) => ({
+      id: `c:${c.id}`,
+      type: "CHEER" as const,
+      createdAtIso: c.createdAt.toISOString(),
+      actorName: getDisplayName(c.author.walletAddress, c.author.username, c.author.name),
+      actorHandle: toHandle(c.author.walletAddress, c.author.username),
+      actorAvatarUrl: c.author.avatarUrl,
+      actorVerified: c.author.worldIdVerified,
+      title: `cheered for ${c.commitment.title}: "${c.message}"`,
+      publicUrl: `/c/${c.commitment.slug}`,
+    })),
+  ].sort((a, b) => new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime());
+
+  // Aggregate believer insights
+  const allBeliefs = await socialPrisma.belief.findMany({
+    where: { commitment: { makerId: user.id } },
+    include: {
+      believer: {
+        select: {
+          walletAddress: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+    },
+  });
+
+  const believerMap = new Map<string, {
+    walletAddress: string;
+    handle: string;
+    avatarUrl: string | null;
+    totalStaked: bigint;
+    count: number;
+  }>();
+
+  for (const b of allBeliefs) {
+    const key = b.believer.walletAddress;
+    const existing = believerMap.get(key) ?? {
+      walletAddress: key,
+      handle: toHandle(b.believer.walletAddress, b.believer.username),
+      avatarUrl: b.believer.avatarUrl,
+      totalStaked: 0n,
+      count: 0,
+    };
+    existing.totalStaked += b.stakeAmountLamports;
+    existing.count += 1;
+    believerMap.set(key, existing);
+  }
+
+  const believerInsights = Array.from(believerMap.values())
+    .sort((a, b) => Number(b.totalStaked - a.totalStaked))
+    .slice(0, 5)
+    .map((bi) => ({
+      walletAddress: bi.walletAddress,
+      handle: bi.handle,
+      avatarUrl: bi.avatarUrl,
+      reputationScore: "High", // Placeholder
+      totalStakedLabel: `${formatSol(bi.totalStaked)} SOL`,
+      beliefCount: bi.count,
+    }));
+
+  return { notifications, believerInsights, totalReactionsReceived };
 }
