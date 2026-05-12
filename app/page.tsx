@@ -6,8 +6,7 @@ import { HowItWorksSection } from "@/components/landing/how-it-works-section";
 import { BelieverEconomySection } from "@/components/landing/believer-economy-section";
 import { FeaturedCommitmentsSection } from "@/components/landing/featured-commitments-section";
 import { FAQSection } from "@/components/landing/faq-section";
-import { TeamSection } from "@/components/landing/team-section";
-import { TestimonialsSection } from "@/components/landing/testimonials-section";
+
 import { ActivityTicker } from "@/components/activity-ticker";
 
 export default function Home() {
