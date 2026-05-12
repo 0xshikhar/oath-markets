@@ -46,7 +46,12 @@ export function InstallPrompt() {
     window.addEventListener("appinstalled", onInstalled);
 
     if (isIos()) {
-      setShowIosHint(true);
+      const timer = setTimeout(() => setShowIosHint(true), 0);
+      return () => {
+        window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+        window.removeEventListener("appinstalled", onInstalled);
+        clearTimeout(timer);
+      };
     }
 
     return () => {

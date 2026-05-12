@@ -21,7 +21,6 @@ type CommitmentCardProps = {
 
 export function CommitmentCard({ commitment, compact = false }: CommitmentCardProps) {
   const isHealthy = !commitment.isAtRisk && commitment.status === "ACTIVE";
-  const isFailed = commitment.status === "FAILED";
   const isCompleted = commitment.status === "COMPLETED";
 
   return (

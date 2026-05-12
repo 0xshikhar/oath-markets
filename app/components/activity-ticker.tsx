@@ -35,7 +35,7 @@ export function ActivityTicker() {
 
   if (activities.length === 0) return null;
 
-  const current = activities[currentIndex];
+
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -54,7 +54,7 @@ export function ActivityTicker() {
       </div>
 
       <div className="flex-1 overflow-hidden ml-[120px]">
-        <div 
+        <div
           className="flex transition-transform duration-700 ease-in-out h-full items-center"
           style={{ transform: `translateY(-${currentIndex * 100}%)` }}
         >

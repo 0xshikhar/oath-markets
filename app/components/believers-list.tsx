@@ -1,7 +1,7 @@
 "use client";
 
 import { Users, SealCheck } from "@phosphor-icons/react";
-import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface Believer {
   walletAddress: string;
@@ -52,7 +52,7 @@ export function BelieversList({ believers, totalCount }: BelieversListProps) {
             <div className="flex items-center gap-3">
               <div className="size-8 rounded-full bg-black/5 flex items-center justify-center overflow-hidden border border-black/5">
                 {believer.avatarUrl ? (
-                  <img src={believer.avatarUrl} alt={believer.handle} className="size-full object-cover" />
+                  <Image src={believer.avatarUrl} alt={believer.handle} width={32} height={32} className="size-full object-cover" />
                 ) : (
                   <span className="text-xs font-black text-black/20">{believer.handle[1]}</span>
                 )}

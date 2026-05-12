@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type { CommitmentDetail } from "@/lib/oath-data";
 
 function ellipsify(value: string, visible = 4) {
@@ -18,7 +18,7 @@ export function CommitmentShareCard({ commitment, onImageGenerated }: Commitment
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const hasCalledCallback = useRef(false);
 
-  const generateImage = () => {
+  const generateImage = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -119,21 +119,21 @@ export function CommitmentShareCard({ commitment, onImageGenerated }: Commitment
 
     const dataUrl = canvas.toDataURL("image/png");
     setImageDataUrl(dataUrl);
-    
+
     if (onImageGenerated && !hasCalledCallback.current) {
       onImageGenerated(dataUrl);
       hasCalledCallback.current = true;
     }
-  };
+  }, [commitment, onImageGenerated]);
 
   useEffect(() => {
     hasCalledCallback.current = false;
-    setImageDataUrl(null);
     const timer = setTimeout(() => {
+      setImageDataUrl(null);
       generateImage();
     }, 100);
     return () => clearTimeout(timer);
-  }, [commitment]);
+  }, [commitment, generateImage]);
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-oath-border bg-oath-surface">
