@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useWallet } from "../lib/wallet/context";
@@ -35,11 +35,7 @@ export function CheerWall({ commitmentId }: CheerWallProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
-  useEffect(() => {
-    fetchCheers();
-  }, [commitmentId]);
-
-  const fetchCheers = async () => {
+  const fetchCheers = useCallback(async () => {
     try {
       const res = await fetch(`/api/cheers?commitmentId=${commitmentId}`);
       const data = await res.json();
@@ -51,7 +47,18 @@ export function CheerWall({ commitmentId }: CheerWallProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [commitmentId]);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      if (active) {
+        await fetchCheers();
+      }
+    };
+    load();
+    return () => { active = false; };
+  }, [fetchCheers]);
 
   const handleCheer = async (message: string) => {
     if (!wallet?.account.address || isSending) return;

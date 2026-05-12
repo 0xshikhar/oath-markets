@@ -15,6 +15,14 @@ type FollowState = {
   followingCount: number;
 };
 
+type FollowResponse = {
+  ok: boolean;
+  isFollowing: boolean;
+  followerCount: number;
+  followingCount: number;
+  error?: string;
+};
+
 const initialState: FollowState = {
   isFollowing: false,
   followerCount: 0,
@@ -44,7 +52,7 @@ export function FollowButton({
           viewerWalletAddress
         )}&followingWallet=${encodeURIComponent(targetWalletAddress)}`
       );
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as FollowResponse;
 
       if (!response.ok || !data.ok) {
         throw new Error("Unable to load follow state");
@@ -74,7 +82,7 @@ export function FollowButton({
           followingWallet: targetWalletAddress,
         }),
       });
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as FollowResponse;
 
       if (!response.ok || !data.ok) {
         throw new Error(data.error ?? "Follow update failed");

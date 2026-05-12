@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,9 +20,9 @@ type FeedClientProps = {
 type FeedApiResponse =
   | (FeedResult & { ok: true })
   | {
-      ok: false;
-      error?: string;
-    };
+    ok: false;
+    error?: string;
+  };
 
 export function FeedClient({
   initialEvents = [],
@@ -74,6 +75,7 @@ function FeedTimeline({
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [sort, setSort] = useState<"latest" | "trending">("latest");
+  const [followingCount, setFollowingCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,6 +97,7 @@ function FeedTimeline({
         if (!cancelled) {
           setEvents(data.events);
           setCursor(data.nextCursor);
+          setFollowingCount(data.followingCount);
           setHasLoaded(true);
         }
       } catch {
@@ -117,16 +120,16 @@ function FeedTimeline({
 
   const emptyMessage = !hasLoaded || isLoading
     ? "Loading your feed..."
-    : "Follow some makers to see their oaths here.";
+    : "The Arena is quiet. Be the first to start an oath or discover makers in the Explore tab.";
 
   const handleLoadMore = async () => {
-    if (isLoading) return;
+    if (isLoading || !cursor) return;
     setIsLoading(true);
     try {
       const response = await fetch(
         `/api/feed?walletAddress=${encodeURIComponent(
           walletAddress
-        )}&cursor=${encodeURIComponent(cursor ?? "")}&limit=20&sort=${sort}`
+        )}&cursor=${encodeURIComponent(cursor)}&limit=20&sort=${sort}`
       );
       const data = (await response.json()) as FeedApiResponse;
       if (response.ok && data.ok) {
@@ -143,6 +146,11 @@ function FeedTimeline({
       <div className="flex items-center justify-between border-b border-black/5 pb-4">
         <div className="flex items-center gap-4">
           <h2 className="text-sm font-black uppercase tracking-[0.2em] text-black/30">Live Arena Feed</h2>
+          {followingCount > 0 && (
+            <span className="text-[10px] font-bold text-black/40 bg-black/5 px-2 py-0.5 rounded-full">
+              Following {followingCount} makers
+            </span>
+          )}
           <div className="flex bg-black/[0.03] p-1 rounded-lg">
             <button
               onClick={() => setSort("latest")}
@@ -166,7 +174,9 @@ function FeedTimeline({
 
       {events.length > 0 ? (
         <div className="space-y-6">
-          {events.map((event) => <FeedEventCard key={event.id} event={event} />)}
+          {events.map((event) => (
+            <FeedEventCard key={event.id} event={event} />
+          ))}
         </div>
       ) : (
         <Card className="border-black/5 bg-white shadow-sm">
@@ -181,28 +191,27 @@ function FeedTimeline({
         </Card>
       )}
 
-      {cursor ? (
+      {cursor && (
         <div className="flex justify-center pt-4">
           <Button
             variant="outline"
             className="rounded-xl border-black/5 bg-white text-xs font-bold uppercase tracking-widest text-black shadow-sm hover:bg-black/5"
             onClick={handleLoadMore}
+            disabled={isLoading}
           >
-            Load more events
+            {isLoading ? "Loading..." : "Load more events"}
           </Button>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
 
 function FeedEventCard({ event }: { event: ActivityEvent }) {
-  const Icon = eventIcon(event);
-  
   return (
     <Card className="group relative border-black/5 bg-white shadow-sm overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-oath-gold">
       <div className="absolute top-0 left-0 w-1.5 h-full bg-oath-gold opacity-0 group-hover:opacity-100 transition-opacity" />
-      
+
       <CardHeader className="p-5 sm:p-7 pb-2 sm:pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -224,66 +233,75 @@ function FeedEventCard({ event }: { event: ActivityEvent }) {
             </div>
           </div>
           <div className="bg-black/5 p-2 rounded-lg border border-black/5">
-            <Icon size={18} className="text-black/30" />
+            {event.type === "NEW_OATH" && <Trophy size={18} className="text-black/30" />}
+            {event.type === "NEW_PROOF" && <Fire size={18} className="text-black/30" />}
+            {event.type === "BELIEVER" && <Coins size={18} className="text-black/30" />}
+            {event.type === "FOLLOW" && <Lightning size={18} className="text-black/30" />}
+            {event.type === "CHALLENGE" && <Warning size={18} className="text-black/30" />}
+            {event.type === "RESOLVED" && (
+              event.status === "COMPLETED" 
+                ? <Trophy size={18} className="text-black/30" /> 
+                : <Warning size={18} className="text-black/30" />
+            )}
+            {!["NEW_OATH", "NEW_PROOF", "BELIEVER", "FOLLOW", "CHALLENGE", "RESOLVED"].includes(event.type) && (
+              <Warning size={18} className="text-black/30" />
+            )}
           </div>
         </div>
       </CardHeader>
-      
-      <CardContent className="p-5 sm:p-7 pt-2 sm:pt-3 space-y-6">
-        <div className="relative">
-          {event.type === "NEW_OATH" ? (
+
+      <CardContent className="p-5 sm:p-7 pt-0 space-y-6">
+        <div className="space-y-4">
+          {event.type === "NEW_OATH" && (
             <EventBody
-              badgeLabel="Market Open"
-              badgeClassName="bg-oath-gold text-black border-oath-gold"
+              badgeLabel="Arena Market Created"
+              badgeClassName="bg-oath-gold/10 text-oath-gold border-oath-gold/20"
               title={event.title}
               description={event.description}
-              footerLeft={`${event.totalDays} Days Commitment`}
-              footerRight={event.stakeLabel}
+              footerLeft={`Stake: ${event.stakeLabel}`}
+              footerRight={`${event.totalDays} Day Commitment`}
             />
-          ) : null}
+          )}
 
-          {event.type === "NEW_PROOF" ? (
+          {event.type === "NEW_PROOF" && (
             <div className="space-y-4">
-              <EventBody
-                badgeLabel={`Day ${event.dayNumber} Proof`}
-                badgeClassName="bg-black text-white border-black"
-                title={event.title}
-                description={event.excerpt}
-                footerLeft="Proof Verified On-chain"
-                footerRight="Live Stats"
-              />
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="bg-black/5 border-transparent text-[9px] font-black uppercase tracking-widest text-black/40">
+                  Day {event.dayNumber} Progress
+                </Badge>
+              </div>
+              <div className="p-4 bg-black/[0.02] border border-black/5 rounded-2xl">
+                <p className="text-sm leading-relaxed text-black/60 italic">&quot;{event.excerpt}&quot;</p>
+              </div>
               <div className="pt-2 border-t border-black/5">
-                <ProofReactionStrip
-                  proofId={event.proofId}
-                  initialCounts={event.reactionCounts}
-                />
+                <ProofReactionStrip proofId={event.proofId} initialCounts={event.reactionCounts} />
               </div>
             </div>
-          ) : null}
+          )}
 
-          {event.type === "BELIEVER" ? (
+          {event.type === "BELIEVER" && (
             <EventBody
-              badgeLabel="Co-Stake"
-              badgeClassName="bg-black/5 text-black border-black/10"
-              title={`${event.actorName} believed in ${event.targetName}'s oath`}
+              badgeLabel="New Believer"
+              badgeClassName="bg-blue-500/10 text-blue-500 border-blue-500/20"
+              title={`${event.actorName} backed ${event.targetName}`}
               description={event.title}
-              footerLeft={event.actorHandle}
-              footerRight={`+ ${event.stakeLabel} Pool`}
+              footerLeft={`Stake: ${event.stakeLabel}`}
+              footerRight="Believer Entry"
             />
-          ) : null}
+          )}
 
-          {event.type === "FOLLOW" ? (
+          {event.type === "FOLLOW" && (
             <EventBody
-              badgeLabel="New Follower"
-              badgeClassName="bg-oath-gold/10 text-oath-black border-oath-gold/20"
+              badgeLabel="New Connection"
+              badgeClassName="bg-purple-500/10 text-purple-500 border-purple-500/20"
               title={`${event.actorName} started following ${event.targetName}`}
               description={`Connecting the social graph. Watchers increase the pressure.`}
               footerLeft={event.actorHandle}
               footerRight="Arena Graph"
             />
-          ) : null}
+          )}
 
-          {event.type === "CHALLENGE" ? (
+          {event.type === "CHALLENGE" && (
             <EventBody
               badgeLabel="New Challenge"
               badgeClassName="bg-red-500/10 text-red-500 border-red-500/20"
@@ -292,9 +310,9 @@ function FeedEventCard({ event }: { event: ActivityEvent }) {
               footerLeft={`Stake: ${event.stakeLabel}`}
               footerRight="Acceptance Pending"
             />
-          ) : null}
+          )}
 
-          {event.type === "RESOLVED" ? (
+          {event.type === "RESOLVED" && (
             <EventBody
               badgeLabel={event.statusLabel}
               badgeClassName={
@@ -307,7 +325,7 @@ function FeedEventCard({ event }: { event: ActivityEvent }) {
               footerLeft="Market Resolved"
               footerRight={event.statusLabel}
             />
-          ) : null}
+          )}
         </div>
 
         <div className="flex justify-end">
@@ -337,12 +355,14 @@ function EventBody({
 }) {
   return (
     <div className="space-y-4">
-      <Badge variant="outline" className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${badgeClassName}`}>{badgeLabel}</Badge>
+      <Badge variant="outline" className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${badgeClassName}`}>
+        {badgeLabel}
+      </Badge>
       <div className="space-y-2">
         <p className="text-lg font-bold text-black leading-tight">{title}</p>
         <p className="text-sm leading-6 text-black/40 line-clamp-3">{description}</p>
       </div>
-      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-black/20">
+      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-black/20 pt-2">
         <span>{footerLeft}</span>
         <span>{footerRight}</span>
       </div>
@@ -364,27 +384,18 @@ function AvatarBubble({
     <div className="relative">
       <div className="flex size-14 items-center justify-center overflow-hidden rounded-2xl border border-black/5 bg-black/5 text-sm font-black text-black shadow-inner">
         {avatarUrl ? (
-          <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+          <Image src={avatarUrl} alt={name} width={56} height={56} className="h-full w-full object-cover" />
         ) : (
           initial
         )}
       </div>
-      {verified ? (
+      {verified && (
         <span className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-lg border border-black/5 bg-white text-[10px] text-oath-gold shadow-sm">
           ✓
         </span>
-      ) : null}
+      )}
     </div>
   );
-}
-
-function eventIcon(event: ActivityEvent) {
-  if (event.type === "NEW_OATH") return Trophy;
-  if (event.type === "NEW_PROOF") return Fire;
-  if (event.type === "BELIEVER") return Coins;
-  if (event.type === "FOLLOW") return Lightning;
-  if (event.type === "CHALLENGE") return Warning;
-  return event.status === "COMPLETED" ? Trophy : Warning;
 }
 
 function eventTitle(event: ActivityEvent) {
@@ -393,7 +404,8 @@ function eventTitle(event: ActivityEvent) {
   if (event.type === "BELIEVER") return "A New Believer Has Entered";
   if (event.type === "FOLLOW") return "New Connection in the Arena";
   if (event.type === "CHALLENGE") return "A Gauntlet Has Been Thrown";
-  return event.status === "COMPLETED" ? "Market Resolved: Success" : "Market Resolved: Failed";
+  if (event.type === "RESOLVED") return event.status === "COMPLETED" ? "Market Resolved: Success" : "Market Resolved: Failed";
+  return "Activity in the Arena";
 }
 
 function formatDate(value: string) {

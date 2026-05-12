@@ -3,18 +3,37 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useWallet } from "../../lib/wallet/context";
 import { toast } from "sonner";
 import { PublicPageShell } from "../../components/public-page-shell";
 import { Trophy, Coins, Calendar, CheckCircle, SealCheck } from "@phosphor-icons/react";
 
+interface Challenge {
+  goal: string;
+  stakeSol: number;
+  durationDays: number;
+  status: string;
+  token: string;
+  challenger: {
+    username: string | null;
+    avatarUrl: string | null;
+    walletAddress: string;
+  };
+  challenged: {
+    username: string | null;
+    avatarUrl: string | null;
+    walletAddress: string;
+    verified: boolean;
+  };
+}
+
 export default function ChallengePage() {
   const { token } = useParams();
   const router = useRouter();
   const { wallet } = useWallet();
-  const [challenge, setChallenge] = useState<any>(null);
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAccepting, setIsAccepting] = useState(false);
 
@@ -34,7 +53,7 @@ export default function ChallengePage() {
   }, [token]);
 
   const handleAccept = async () => {
-    if (!wallet) {
+    if (!wallet || !challenge) {
       toast.error("Connect your wallet to accept the challenge");
       return;
     }
@@ -60,8 +79,9 @@ export default function ChallengePage() {
       } else {
         throw new Error(data.error || "Failed to accept challenge");
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message);
     } finally {
       setIsAccepting(false);
     }
@@ -102,7 +122,7 @@ export default function ChallengePage() {
           <CardHeader className="p-10 pb-4">
             <div className="flex items-center gap-4 mb-8">
               <Avatar className="w-12 h-12 border-2 border-oath-gold">
-                <AvatarImage src={challenge.challenger.avatarUrl} />
+                <AvatarImage src={challenge.challenger.avatarUrl ?? undefined} />
                 <AvatarFallback className="bg-black text-white font-black">
                   {challenge.challenger.username?.slice(0, 2).toUpperCase() || "0X"}
                 </AvatarFallback>
@@ -119,7 +139,7 @@ export default function ChallengePage() {
             <div className="bg-black/[0.02] border border-black/5 rounded-3xl p-8 space-y-6">
               <div className="space-y-2">
                 <p className="text-[10px] font-black uppercase tracking-widest text-black/30">The Goal</p>
-                <p className="text-2xl font-black text-black leading-tight">"{challenge.goal}"</p>
+                <p className="text-2xl font-black text-black leading-tight">&quot;{challenge.goal}&quot;</p>
               </div>
 
               <div className="grid grid-cols-2 gap-6 pt-4 border-t border-black/5">
@@ -156,7 +176,7 @@ export default function ChallengePage() {
               <div className="space-y-6">
                 <div className="p-6 bg-oath-gold/5 border border-oath-gold/10 rounded-3xl">
                   <p className="text-sm font-medium text-black/70 leading-relaxed italic">
-                    "Accepting this challenge requires you to stake {challenge.stakeSol} SOL. You must submit proof every day for {challenge.durationDays} days. If you fail, your stake will be slashed."
+                    &quot;Accepting this challenge requires you to stake {challenge.stakeSol} SOL. You must submit proof every day for {challenge.durationDays} days. If you fail, your stake will be slashed.&quot;
                   </p>
                 </div>
 
@@ -190,7 +210,7 @@ export default function ChallengePage() {
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/20">The Maker</p>
           <div className="flex items-center justify-center gap-3">
             <Avatar className="w-8 h-8 border border-black/5">
-              <AvatarImage src={challenge.challenged.avatarUrl} />
+              <AvatarImage src={challenge.challenged.avatarUrl ?? undefined} />
               <AvatarFallback className="bg-black/5 font-bold">
                 {challenge.challenged.username?.slice(0, 2).toUpperCase() || "0X"}
               </AvatarFallback>
