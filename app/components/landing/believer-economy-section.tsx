@@ -38,7 +38,7 @@ export function BelieverEconomySection() {
               <span className="text-oath-gold italic">Earn together.</span>
             </h2>
             <p className="max-w-xl text-lg leading-relaxed text-muted-foreground border-l-2 border-oath-border pl-6">
-              Don't just watch from the sidelines. Co-stake on makers you believe will win. 
+              Don&apos;t just watch from the sidelines. Co-stake on makers you believe will win. 
               If they complete their oath, you share a portion of the faith fee. 
               Principal is always protected.
             </p>

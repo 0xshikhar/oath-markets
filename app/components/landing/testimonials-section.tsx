@@ -10,7 +10,7 @@ function TestimonialCard({ quote, author, role }: { quote: string; author: strin
           <path d="M10 8c-3.3 0-6 2.7-6 6v10h10V14H8c0-2.2 1.8-4 4-4V8zm14 0c-3.3 0-6 2.7-6 6v10h10V14h-6c0-2.2 1.8-4 4-4V8z" />
         </svg>
       </div>
-      <p className="text-lg font-medium leading-relaxed italic">"{quote}"</p>
+      <p className="text-lg font-medium leading-relaxed italic">&quot;{quote}&quot;</p>
       <div className="flex items-center gap-3 pt-2">
         <div className="h-10 w-10 rounded-full bg-oath-muted/30 border border-oath-border flex items-center justify-center font-bold text-xs">
           {author.split(' ').map(n => n[0]).join('')}

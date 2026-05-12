@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CommitmentCard } from "@/app/components/commitment-card";
+import type { CommitmentSummary } from "@/lib/oath-data";
 
 // Mock data for featured commitments
 const MOCK_COMMITMENTS = [
@@ -127,7 +128,7 @@ export function FeaturedCommitmentsSection() {
 
       <div className="grid gap-8 lg:grid-cols-3">
         {MOCK_COMMITMENTS.map((commitment) => (
-          <CommitmentCard key={commitment.slug} commitment={commitment as any} />
+          <CommitmentCard key={commitment.slug} commitment={commitment as unknown as CommitmentSummary} />
         ))}
       </div>
     </section>

@@ -7,8 +7,8 @@ export default function CreatePage() {
   return (
     <PublicPageShell
       eyebrow="Create"
-      title="Draft the oath before it goes public."
-      description="The wizard walks a maker from goal text to stake, verification, and review. It is structured to match the production flow we are building: wallet connect, Prisma, World ID, and Anchor escrow."
+      title="Draft the Oath"
+      description="Commit to your next milestone. Stake SOL, choose your coach, and establish your on-chain reputation. Every oath is a choice-publicly witnessed or privately enforced."
       actions={
         <Button
           asChild

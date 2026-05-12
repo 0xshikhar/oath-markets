@@ -15,7 +15,7 @@ export function FAQSection() {
           <AccordionTrigger className="text-left font-semibold">What happens to my SOL if I fail?</AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
             If you fail to submit proof before the daily deadline, your principal stake is burned. 
-            We use "hard commitments" to ensure maximum accountability. There are no refunds for broken oaths.
+            We use &quot;hard commitments&quot; to ensure maximum accountability. There are no refunds for broken oaths.
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="item-2" className="border-oath-border">
@@ -28,7 +28,7 @@ export function FAQSection() {
         <AccordionItem value="item-3" className="border-oath-border">
           <AccordionTrigger className="text-left font-semibold">How do believers earn yield?</AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
-            Makers pay a 5% "faith fee" upon successful completion of their oath. 
+            Makers pay a 5% &quot;faith fee&quot; upon successful completion of their oath. 
             This fee is distributed among everyone who co-staked as a believer, proportional to their stake.
           </AccordionContent>
         </AccordionItem>

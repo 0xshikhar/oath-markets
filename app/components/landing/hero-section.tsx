@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { CheckCircle, ShieldCheck, Users } from "@phosphor-icons/react/dist/ssr";
 
 export function HeroSection() {
@@ -95,7 +93,7 @@ export function HeroSection() {
                 <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">ID: 0x82...F92</span>
               </div>
               <h3 className="text-2xl sm:text-4xl font-black text-white leading-[1.1] tracking-tight">
-                "Ship one public build note every day for 30 days"
+                &quot;Ship one public build note every day for 30 days&quot;
               </h3>
             </div>
 

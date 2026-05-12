@@ -74,12 +74,12 @@ type CommitmentCreateRequest = {
 };
 
 const steps = [
-  "Goal",
-  "Duration",
-  "Stake",
-  "Visibility",
-  "Coach",
-  "Review",
+  "Commitment",
+  "Schedule",
+  "Skin in the Game",
+  "Privacy",
+  "AI Coach",
+  "Finalize",
 ] as const;
 
 const defaultState: WizardState = {
@@ -236,8 +236,8 @@ export function CreateWizard() {
             <Badge
               key={label}
               className={`rounded-[var(--radius)] px-4 py-2 ${index === step
-                  ? "bg-oath-gold/15 text-oath-black hover:bg-oath-gold/20"
-                  : "bg-oath-surface/70 text-oath-muted-text hover:bg-oath-surface"
+                ? "bg-oath-gold/15 text-oath-black hover:bg-oath-gold/20"
+                : "bg-oath-surface/70 text-oath-muted-text hover:bg-oath-surface"
                 }`}
               variant="outline"
             >
@@ -258,23 +258,23 @@ export function CreateWizard() {
             </CardTitle>
             <p className="text-sm text-muted-foreground">
               {step === 0
-                ? "Define the commitment and the proof type."
+                ? "Define your commitment and proof requirements."
                 : step === 1
-                  ? "Set duration and daily proof cadence."
+                  ? "Configure your timeline and proof window."
                   : step === 2
-                    ? "Lock the stake and slash destination."
+                    ? "Lock your stake in the Anchor escrow."
                     : step === 3
-                      ? "Choose visibility and human verification."
+                      ? "Choose your visibility and verify your identity."
                       : step === 4
-                        ? "Tune the tone, timezone, and nudge schedule."
-                        : "Review the oath before it becomes public."}
+                        ? "Tune your coach's tone and notification schedule."
+                        : "Final review of your on-chain contract."}
             </p>
           </CardHeader>
 
           <CardContent className="space-y-6 pb-6 sm:space-y-7 sm:pb-8">
             {step === 0 && (
               <>
-                <Field label="Goal" hint="What are you committing to?">
+                <Field label="Oath Title" hint="Your public commitment statement">
                   <Input
                     value={state.title}
                     onChange={(event) => update("title", event.target.value)}
@@ -307,7 +307,7 @@ export function CreateWizard() {
 
             {step === 1 && (
               <>
-                <Field label="Duration" hint="How long the oath runs">
+                <Field label="Duration" hint="The lifespan of your liquid contract">
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                     {[7, 14, 21, 30, 60, 90].map((duration) => (
                       <Button
@@ -347,7 +347,7 @@ export function CreateWizard() {
 
             {step === 2 && (
               <>
-                <Field label="Stake" hint="SOL only for MVP">
+                <Field label="Commitment Stake" hint="Locked in Escrow">
                   <div className="grid grid-cols-4 gap-2">
                     {[0.1, 0.5, 1, 2].map((amount) => (
                       <Button
@@ -390,7 +390,7 @@ export function CreateWizard() {
 
             {step === 3 && (
               <>
-                <Field label="Visibility" hint="Public is shareable. Private stays maker-only.">
+                <Field label="Visibility" hint="Public Arena or Private Journal?">
                   <ChipGrid
                     options={visibilityOptions}
                     value={state.visibility}
@@ -410,7 +410,7 @@ export function CreateWizard() {
 
             {step === 4 && (
               <>
-                <Field label="Coach tone" hint="How the nudges should feel">
+                <Field label="Coach Tone" hint="Set the AI's psychological profile">
                   <ChipGrid
                     options={toneOptions}
                     value={state.tone}
@@ -523,12 +523,12 @@ export function CreateWizard() {
           <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
             Preview
           </Badge>
-          <CardTitle className="text-2xl tracking-[-0.03em]">Commitment preview</CardTitle>
+          <CardTitle className="text-2xl tracking-[-0.03em]">Contract Preview</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-5">
             <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-              Goal
+              Oath
             </p>
             <p className="mt-2 text-xl font-semibold tracking-[-0.03em]">{preview.title}</p>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
