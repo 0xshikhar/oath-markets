@@ -132,7 +132,7 @@ pub mod oath {
         require!(now >= commitment.start_timestamp, OathError::CommitmentNotStarted);
         require!(
             now <= commitment.end_timestamp + PROOF_GRACE_PERIOD_SECONDS,
-            OathError::CommitmentNotResolvableYet
+            OathError::CommitmentExpired
         );
         require!(day_number > 0 && day_number <= commitment.total_days, OathError::ProofDayOutOfRange);
 

@@ -12,6 +12,8 @@ pub enum OathError {
     CommitmentNotActive,
     #[msg("Commitment is not ready to resolve")]
     CommitmentNotResolvableYet,
+    #[msg("Commitment has already expired and is no longer accepting proofs")]
+    CommitmentExpired,
     #[msg("Commitment has not started yet")]
     CommitmentNotStarted,
     #[msg("Proof day is out of range")]

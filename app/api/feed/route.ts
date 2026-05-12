@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const walletAddress = url.searchParams.get("walletAddress")?.trim();
   const cursor = url.searchParams.get("cursor")?.trim() ?? null;
+  const sort = (url.searchParams.get("sort")?.trim() as "latest" | "trending") ?? "latest";
   const limit = Number(url.searchParams.get("limit") ?? "20");
 
   if (!walletAddress) {
@@ -17,6 +18,7 @@ export async function GET(request: Request) {
   const result = await getFeedEvents(walletAddress, {
     limit: Number.isFinite(limit) ? limit : 20,
     cursor,
+    sort,
   });
 
   return NextResponse.json({
