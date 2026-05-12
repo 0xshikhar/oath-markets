@@ -71,7 +71,7 @@ function PrivyWalletButton() {
         onClick={() => {
           void login();
         }}
-        className="cursor-pointer rounded-[var(--radius)] border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
+        className="cursor-pointer rounded-lg border border-border bg-background px-6 py-3 text-sm font-bold text-foreground transition hover:bg-muted active:scale-95"
       >
         Sign in
       </button>
@@ -82,7 +82,7 @@ function PrivyWalletButton() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setIsOpen((current) => !current)}
-        className="flex cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted active:scale-95"
       >
         <span className="h-2 w-2 rounded-full bg-oath-gold" />
         <span className="font-mono">{buttonLabel}</span>
