@@ -77,33 +77,40 @@ export function InstallPrompt() {
     <div
       role="dialog"
       aria-label="Install OATH"
-      className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-border bg-background/95 p-3 shadow-lg backdrop-blur"
+      className="fixed inset-x-4 bottom-4 z-[100] mx-auto flex w-full max-w-[calc(100%-2rem)] sm:max-w-md items-center gap-4 rounded-2xl border border-oath-border bg-oath-surface/95 p-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-8 duration-500"
     >
-      <div className="flex-1 text-sm">
-        <p className="font-semibold">Install OATH</p>
-        <p className="text-muted-foreground">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-oath-black text-oath-gold">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 5v14M5 12l7 7 7-7" />
+        </svg>
+      </div>
+      <div className="flex-1 space-y-0.5">
+        <p className="font-black uppercase tracking-wider text-foreground text-xs">Install OATH</p>
+        <p className="text-xs text-muted-foreground font-medium leading-snug">
           {deferredEvent
             ? "Get one-tap access from your home screen."
-            : "Tap Share, then Add to Home Screen."}
+            : "Tap Share → Add to Home Screen."}
         </p>
       </div>
-      {deferredEvent ? (
+      <div className="flex items-center gap-2">
+        {deferredEvent ? (
+          <button
+            type="button"
+            onClick={install}
+            className="rounded-lg bg-oath-gold px-4 py-2 text-xs font-black uppercase tracking-wider text-black hover:bg-oath-gold/90 transition-transform active:scale-95"
+          >
+            Install
+          </button>
+        ) : null}
         <button
           type="button"
-          onClick={install}
-          className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+          onClick={dismiss}
+          aria-label="Dismiss"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-oath-black/5 transition-colors"
         >
-          Install
+          <span className="text-lg">✕</span>
         </button>
-      ) : null}
-      <button
-        type="button"
-        onClick={dismiss}
-        aria-label="Dismiss"
-        className="rounded-full px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        ✕
-      </button>
+      </div>
     </div>
   );
 }
