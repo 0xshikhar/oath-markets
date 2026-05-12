@@ -21,8 +21,8 @@ export const metadata: Metadata = {
   description:
     "Public commitment stakes on Solana with escrow, proof, and reputation.",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
+    icon: "/icons/icon-192.png",
+    shortcut: "/icons/icon-192.png",
     apple: "/icons/apple-touch-icon.png",
   },
   manifest: "/manifest.webmanifest",

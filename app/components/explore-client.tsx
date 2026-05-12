@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,28 +13,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
+import {
+  MagnifyingGlass,
+  Funnel,
+  ArrowClockwise,
+  Fire,
+  Warning,
+  Lightning,
+  Clock
+} from "@phosphor-icons/react/dist/ssr";
 import type { CommitmentSummary } from "@/lib/oath-data";
-import type { HotCommitment } from "@/lib/social-data";
+import { CommitmentCard } from "./commitment-card";
+import { ArenaSidebar } from "./arena-sidebar";
+import { cn } from "@/lib/utils";
 
 type ExploreClientProps = {
   commitments: CommitmentSummary[];
-  hotCommitments: HotCommitment[];
   categories: string[];
   initialCategory: string;
-  initialSort: (typeof sortOptions)[number]["value"];
+  initialSort: string;
   initialSearch: string;
 };
 
 const sortOptions = [
-  { value: "believers", label: "Most Believers" },
-  { value: "recent", label: "Recently Created" },
-  { value: "ending", label: "Ending Soon" },
+  { value: "believers", label: "Most Believers", icon: <Fire size={14} /> },
+  { value: "recent", label: "Recently Created", icon: <ArrowClockwise size={14} /> },
+  { value: "at-risk", label: "At Risk", icon: <Warning size={14} className="text-red-500" /> },
+  { value: "streak", label: "Perfect Streak", icon: <Lightning size={14} className="text-oath-gold" /> },
+  { value: "ending", label: "Ending Soon", icon: <Clock size={14} /> },
 ] as const;
+
+import { ActivityTicker } from "./activity-ticker";
 
 export function ExploreClient({
   commitments,
-  hotCommitments,
   categories,
   initialCategory,
   initialSort,
@@ -44,16 +55,12 @@ export function ExploreClient({
   const router = useRouter();
   const pathname = usePathname();
   const [category, setCategory] = useState(initialCategory);
-  const [sort, setSort] = useState<(typeof sortOptions)[number]["value"]>(
-    initialSort
-  );
+  const [sort, setSort] = useState(initialSort);
   const [search, setSearch] = useState(initialSearch);
-
-  const categoryOptions = useMemo(() => categories, [categories]);
 
   const pushFilters = (next: {
     category?: string;
-    sort?: (typeof sortOptions)[number]["value"];
+    sort?: string;
     search?: string;
   }) => {
     const params = new URLSearchParams();
@@ -93,6 +100,14 @@ export function ExploreClient({
       })
       .sort((a, b) => {
         if (sort === "ending") return a.daysRemaining - b.daysRemaining;
+        if (sort === "at-risk") {
+          if (a.isAtRisk && !b.isAtRisk) return -1;
+          if (!a.isAtRisk && b.isAtRisk) return 1;
+          return b.believerCount - a.believerCount;
+        }
+        if (sort === "streak") {
+          return b.progressPercent - a.progressPercent;
+        }
         if (sort === "recent") {
           return (
             new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime()
@@ -103,31 +118,18 @@ export function ExploreClient({
   }, [category, commitments, search, sort]);
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="space-y-6">
-        <Card className="border-oath-border bg-card">
-          <CardHeader className="space-y-6 p-5 sm:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-3">
-                <Badge className="w-fit rounded-[var(--radius)] border border-oath-border bg-background/50 text-[0.68rem] uppercase tracking-[0.26em] text-oath-muted-text">
-                  Explore
-                </Badge>
-                <div className="space-y-2">
-                  <CardTitle className="text-3xl tracking-[-0.03em] sm:text-4xl">
-                    Active oaths with live pressure.
-                  </CardTitle>
-                  <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-                    Browse public commitment pages, compare social pressure, and
-                    find the oaths worth watching.
-                  </p>
-                </div>
-              </div>
-              <Button asChild className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
-                <Link href="/create">Start an oath</Link>
-              </Button>
-            </div>
-
-            <div className="grid gap-3 lg:grid-cols-[1.4fr_220px]">
+    <div className="space-y-8">
+      <ActivityTicker />
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+      <div className="flex-1 space-y-8 w-full">
+        {/* Arena Controls */}
+        <div className="bg-white border border-black/5 rounded-[2rem] p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="relative flex-1 group">
+              <MagnifyingGlass
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-oath-gold transition-colors"
+              />
               <Input
                 value={search}
                 onChange={(event) => {
@@ -135,258 +137,88 @@ export function ExploreClient({
                   setSearch(value);
                   pushFilters({ search: value });
                 }}
-                placeholder="Search by goal, maker, or proof type"
-                className="rounded-[var(--radius)] border-oath-border bg-background/50"
+                placeholder="Search the arena..."
+                className="pl-11 h-12 bg-black/[0.02] border-black/5 rounded-xl focus:ring-oath-gold/20 focus:border-oath-gold transition-all text-sm font-medium"
               />
-              <Select
-                value={sort}
-                onValueChange={(value) => {
-                  const nextSort = value as (typeof sortOptions)[number]["value"];
-                  setSort(nextSort);
-                  pushFilters({ sort: nextSort });
-                }}
-              >
-                <SelectTrigger className="rounded-[var(--radius)] border-oath-border bg-background/50">
-                  <SelectValue placeholder="Sort commitments" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sortOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {categoryOptions.map((item) => {
-                const active = item === category;
-                return (
-                  <Button
-                    key={item}
-                    type="button"
-                    variant="outline"
-                    className={
-                      active
-                        ? "rounded-[var(--radius)] border-oath-gold bg-oath-gold/10 text-oath-black hover:bg-oath-gold/15"
-                        : "rounded-[var(--radius)] border-oath-border bg-background/40 text-muted-foreground hover:bg-background/60 hover:text-foreground"
-                    }
-                    onClick={() => {
-                      setCategory(item);
-                      pushFilters({ category: item });
-                    }}
-                  >
-                    {item}
-                  </Button>
-                );
-              })}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 bg-black/[0.02] border border-black/5 rounded-xl">
+                <Funnel size={14} className="text-black/30" />
+                <Select
+                  value={sort}
+                  onValueChange={(value) => {
+                    setSort(value);
+                    pushFilters({ sort: value });
+                  }}
+                >
+                  <SelectTrigger className="border-none bg-transparent h-auto p-0 focus:ring-0 w-auto min-w-[180px] text-[10px] font-black uppercase tracking-[0.15em] text-black/60">
+                    <SelectValue placeholder="Sort By" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-black/5">
+                    {sortOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value} className="text-xs font-bold uppercase tracking-wider py-3">
+                        <div className="flex items-center gap-2">
+                          {option.icon}
+                          {option.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+          </div>
 
-            <div className="grid gap-3 sm:grid-cols-4">
-              <InfoStat label="Visible oaths" value={filtered.length.toString()} />
-              <InfoStat
-                label="Top category"
-                value={categories.find((item) => item !== "ALL") ?? "ALL"}
-              />
-              <InfoStat
-                label="Default sort"
-                value={sortOptions.find((item) => item.value === sort)?.label ?? "-"}
-              />
-              <InfoStat label="Open stake" value="SOL only" />
-            </div>
-          </CardHeader>
-        </Card>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((item) => {
+              const active = item === category;
+              return (
+                <button
+                  key={item}
+                  onClick={() => {
+                    setCategory(item);
+                    pushFilters({ category: item });
+                  }}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-200 border",
+                    active
+                      ? "bg-black text-white border-black shadow-lg"
+                      : "bg-black/[0.02] text-black/40 border-black/5 hover:border-black/20 hover:text-black"
+                  )}
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-        <div className="space-y-4">
+        {/* Results Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filtered.length > 0 ? (
             filtered.map((commitment) => (
-              <ExploreResultCard key={commitment.slug} commitment={commitment} />
+              <CommitmentCard key={commitment.slug} commitment={commitment} />
             ))
           ) : (
-            <Card className="border-oath-border bg-card">
-              <CardContent className="p-6 text-sm text-muted-foreground">
-                No oaths found. Be the first to create one.
-              </CardContent>
-            </Card>
+            <div className="col-span-full py-20 bg-white border border-black/5 rounded-[2rem] flex flex-col items-center justify-center text-center space-y-4">
+              <div className="size-16 rounded-2xl bg-black/5 flex items-center justify-center">
+                <MagnifyingGlass size={32} className="text-black/10" />
+              </div>
+              <div>
+                <p className="text-sm font-black uppercase tracking-widest text-black">No Oaths Found</p>
+                <p className="text-xs text-black/40 font-medium mt-1">Try adjusting your filters or search query.</p>
+              </div>
+              <Button asChild className="bg-oath-gold text-black hover:bg-black hover:text-white rounded-xl h-12 px-8 font-black text-[10px] uppercase tracking-widest transition-all">
+                <Link href="/create">Start New Oath</Link>
+              </Button>
+            </div>
           )}
         </div>
       </div>
 
-      <Card className="h-fit border-oath-border bg-card lg:sticky lg:top-28">
-        <CardHeader className="space-y-3">
-          <Badge className="w-fit rounded-[var(--radius)] border border-oath-border bg-background/50 text-[0.68rem] uppercase tracking-[0.26em] text-oath-muted-text">
-            Feed lens
-          </Badge>
-          <CardTitle className="text-2xl tracking-[-0.03em]">
-            Why these commitments matter
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm leading-7 text-muted-foreground">
-          <p>
-            Public commitments work because the page is easy to scan in one
-            glance. The goal, stake, believers, and proof cadence should be
-            obvious without reading a long block of copy.
-          </p>
-          <div className="space-y-3 rounded-[var(--radius)] border border-oath-border bg-background/30 p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-                Hot right now
-              </p>
-              <span className="text-xs text-oath-muted-text">24h reactions</span>
-            </div>
-            <div className="space-y-3">
-              {hotCommitments.map((commitment) => (
-                <Link
-                  key={commitment.slug}
-                  href={commitment.publicUrl}
-                  className="block rounded-[var(--radius)] border border-oath-border bg-background/40 p-3 transition hover:border-oath-gold/30 hover:bg-oath-gold/5"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-foreground">
-                        {commitment.title}
-                      </p>
-                      <p className="text-xs text-oath-muted-text">
-                        {commitment.makerHandle} · {commitment.believerCount} believers
-                      </p>
-                    </div>
-                    <span className="rounded-[var(--radius)] border border-oath-border px-2 py-1 text-xs text-oath-black">
-                      {commitment.reactionCount24h}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-            <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-              Current filter
-            </p>
-            <p className="text-foreground">{category}</p>
-          </div>
-          <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-            <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-              Sort
-            </p>
-            <p className="text-foreground">
-              {sortOptions.find((option) => option.value === sort)?.label}
-            </p>
-          </div>
-          <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-            <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-              Audience
-            </p>
-            <p className="text-foreground">Makers, believers, and spectators</p>
-          </div>
-        </CardContent>
-      </Card>
-    </section>
-  );
-}
-
-function ExploreResultCard({ commitment }: { commitment: CommitmentSummary }) {
-  return (
-    <Card className="border-oath-border bg-card transition-colors duration-200 hover:border-oath-gold/30">
-      <CardContent className="grid gap-4 p-5 sm:p-6 xl:grid-cols-[1fr_220px] xl:items-start">
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className="rounded-[var(--radius)] border-oath-border bg-background/50 text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
-              >
-                {commitment.category}
-              </Badge>
-              <Badge
-                variant="outline"
-                className="rounded-[var(--radius)] border-oath-border bg-background/50 text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
-              >
-                {commitment.statusLabel}
-              </Badge>
-            </div>
-            <span className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-              {commitment.daysRemaining} days left
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{commitment.makerName}</span>
-              <span className="text-oath-muted-text">{commitment.makerHandle}</span>
-              {commitment.makerVerified ? (
-                <span className="rounded-[var(--radius)] border border-oath-green/30 bg-oath-green/10 px-2 py-0.5 text-[0.65rem] font-medium text-oath-green">
-                  Verified
-                </span>
-              ) : null}
-            </div>
-            <h3 className="text-2xl font-semibold tracking-[-0.03em] text-foreground">
-              {commitment.title}
-            </h3>
-            <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-              {commitment.description}
-            </p>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-4">
-            <Metric label="Staked" value={commitment.stakeLabel} />
-            <Metric label="Believers" value={commitment.believerCount.toString()} />
-            <Metric label="Proofs" value={`${commitment.proofCount}/${commitment.totalDays}`} />
-            <Metric label="Left" value={`${commitment.daysRemaining}d`} />
-          </div>
-        </div>
-
-        <div className="space-y-4 rounded-[var(--radius)] border border-oath-border bg-background/30 p-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-              <span>Progress</span>
-              <span>{commitment.progressPercent}%</span>
-            </div>
-            <Progress value={commitment.progressPercent} className="h-2" />
-          </div>
-
-          <div className="grid gap-2">
-            <SmallStat label="Day" value={`${commitment.proofCount} / ${commitment.totalDays}`} />
-            <SmallStat label="Believer pool" value={`${commitment.believerCount} supporters`} />
-            <SmallStat label="Stake" value={commitment.stakeLabel} />
-          </div>
-
-          <Button asChild className="w-full rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
-            <Link href={commitment.publicUrl}>View oath</Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function InfoStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-      <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">{label}</p>
-      <p className="mt-2 break-words text-sm leading-5 text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/80 px-3 py-3">
-      <p className="text-[0.65rem] uppercase tracking-[0.2em] text-oath-muted-text">
-        {label}
-      </p>
-      <p className="mt-2 break-words font-mono text-sm leading-5 text-foreground">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function SmallStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-h-20 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background/40 px-3 py-2">
-      <p className="text-[0.6rem] uppercase tracking-[0.18em] text-oath-muted-text">{label}</p>
-      <p className="mt-2 break-words text-sm leading-5 text-foreground">{value}</p>
+      <ArenaSidebar />
+      </div>
     </div>
   );
 }

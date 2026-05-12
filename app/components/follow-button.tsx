@@ -136,17 +136,24 @@ export function FollowButton({
   const state = followStateQuery.data ?? initialState;
 
   return (
-    <Button
-      className={className}
-      variant={state.isFollowing ? "outline" : "default"}
-      onClick={() => followMutation.mutate(!state.isFollowing)}
-      disabled={followMutation.isPending || followStateQuery.isLoading}
-    >
-      {followMutation.isPending
-        ? "Updating..."
-        : state.isFollowing
-          ? "Following"
-          : "Follow"}
-    </Button>
+    <div className="flex flex-col items-center gap-1.5">
+      <Button
+        className={className}
+        variant={state.isFollowing ? "outline" : "default"}
+        onClick={() => followMutation.mutate(!state.isFollowing)}
+        disabled={followMutation.isPending || followStateQuery.isLoading}
+      >
+        {followMutation.isPending
+          ? "Updating..."
+          : state.isFollowing
+            ? "Following"
+            : "Follow"}
+      </Button>
+      {!state.isFollowing && (
+        <p className="text-[9px] font-mono text-black/20 uppercase tracking-[0.2em] animate-in fade-in slide-in-from-top-1 duration-500">
+          Get proof alerts
+        </p>
+      )}
+    </div>
   );
 }

@@ -30,6 +30,13 @@ const MOCK_COMMITMENTS = [
     createdAtLabel: "May 1",
     endDateLabel: "May 31, 2026",
     publicUrl: "/explore",
+    reactionCounts: {
+      momentum: 0,
+      streak: 0,
+      watching: 0,
+      doubt: 0,
+      total: 0,
+    },
   },
   {
     slug: "run-5km-morning",
@@ -54,6 +61,13 @@ const MOCK_COMMITMENTS = [
     createdAtLabel: "May 5",
     endDateLabel: "May 26, 2026",
     publicUrl: "/explore",
+    reactionCounts: {
+      momentum: 0,
+      streak: 0,
+      watching: 0,
+      doubt: 0,
+      total: 0,
+    },
   },
   {
     slug: "design-tip-twitter",
@@ -78,6 +92,13 @@ const MOCK_COMMITMENTS = [
     createdAtLabel: "Apr 15",
     endDateLabel: "May 15, 2026",
     publicUrl: "/explore",
+    reactionCounts: {
+      momentum: 0,
+      streak: 0,
+      watching: 0,
+      doubt: 0,
+      total: 0,
+    },
   },
 ];
 

@@ -2,6 +2,7 @@
 
 import type { ChangeEvent } from "react";
 import { useEffect, useState, useTransition } from "react";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
 import type { Address } from "@solana/kit";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,22 @@ import type { CommitmentDetail, CommentThreadNode } from "@/lib/oath-data";
 import { useCluster } from "./cluster-context";
 import { ProofReactionStrip } from "./proof-reaction-strip";
 import { CommitmentShareDialog } from "./share";
+import { 
+  Fire, 
+  Lightning, 
+  Users, 
+  Coins, 
+  Calendar, 
+  SealCheck,
+  ShareNetwork,
+  Clock,
+  ChatCircle,
+  TrendUp
+} from "@phosphor-icons/react";
+import { BelieversList } from "./believers-list";
+import { CheerWall } from "./cheer-wall";
+import { ChallengeModal } from "./challenge-modal";
+import { Megaphone } from "@phosphor-icons/react";
 
 type CommitmentSurfaceClientProps = {
   commitment: CommitmentDetail | null;
@@ -90,6 +107,7 @@ export function CommitmentSurfaceClient({
   const [proofImageFile, setProofImageFile] = useState<File | null>(null);
   const [proofImageUrl, setProofImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [challengeOpen, setChallengeOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [fetchedCommitment, setFetchedCommitment] = useState<{
     walletAddress: string;
@@ -496,355 +514,328 @@ export function CommitmentSurfaceClient({
   }
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-      <Card className="border-oath-border bg-card">
-        <CardHeader className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className="bg-oath-gold/10 text-oath-black hover:bg-oath-gold/20">
-              {activeCommitment.category}
-            </Badge>
-            <Badge variant="outline" className="border-oath-border text-oath-muted-text">
-              {activeCommitment.proofType}
-            </Badge>
-            <Badge variant="outline" className="border-oath-border text-oath-muted-text">
-              {activeCommitment.coachToneLabel}
-            </Badge>
-            {!activeCommitment.isPublic ? (
-              <Badge className="bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
-                Private
+    <section className="grid gap-8 lg:grid-cols-[1fr_400px]">
+      <div className="space-y-8">
+        <Card className="border-black/5 bg-white overflow-hidden shadow-sm">
+          <CardHeader className="p-8 pb-4">
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <Badge className="bg-oath-gold text-black border-transparent text-[9px] font-black uppercase tracking-widest px-3 py-1">
+                {activeCommitment.category}
               </Badge>
-            ) : null}
-            {activeCommitment.makerVerified ? (
-              <Badge className="bg-oath-green/10 text-oath-green hover:bg-oath-green/20">
-                Verified human
+              <Badge variant="outline" className="border-black/5 text-black/40 text-[9px] font-black uppercase tracking-widest px-3 py-1 bg-black/[0.02]">
+                {activeCommitment.proofType}
               </Badge>
-            ) : null}
-          </div>
-          <CardTitle className="text-4xl tracking-[-0.04em] sm:text-5xl">
-            {activeCommitment.title}
-          </CardTitle>
-          <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-            {activeCommitment.description}
-          </p>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span>{activeCommitment.makerHandle}</span>
-            <span>·</span>
-            <span>{activeCommitment.startDateLabel}</span>
-            <span>·</span>
-            <span>{activeCommitment.endDateLabel}</span>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-6 pb-8">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-oath-muted-text">
-                Day {activeCommitment.proofCount} of {activeCommitment.totalDays}
-              </span>
-              <span className="font-mono text-oath-black">
-                {activeCommitment.progressPercent}%
-              </span>
+              {activeCommitment.isAtRisk && (
+                <Badge className="bg-red-500 text-white border-transparent text-[9px] font-black uppercase tracking-widest px-3 py-1 animate-pulse">
+                  At Risk
+                </Badge>
+              )}
             </div>
-            <Progress
-              value={activeCommitment.progressPercent}
-              className="h-2 transition-all"
-            />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric label="Stake" value={activeCommitment.stakeLabel} />
-            <Metric label="Believers" value={activeCommitment.believerCount.toString()} />
-            <Metric label="Days left" value={activeCommitment.daysRemaining.toString()} />
-            <Metric label="Completion" value={activeCommitment.completionRatioLabel} />
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-4">
-            <Dialog open={beliefOpen} onOpenChange={setBeliefOpen}>
-              <DialogTrigger asChild>
-                <Button className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
-                  Believe in them
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Believe in this oath</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-                    <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-                      Commitment
-                    </p>
-                    <p className="mt-2 text-sm text-foreground">{activeCommitment.title}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Belief amount</p>
-                    <Input
-                      type="number"
-                      step="0.05"
-                      min="0.05"
-                      value={beliefAmount}
-                      onChange={(event) => setBeliefAmount(event.target.value)}
-                      className="border-oath-border bg-background/50"
-                    />
-                  </div>
-                  <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 text-sm leading-7 text-muted-foreground">
-                    Your stake returns on failure. On success, believers share the faith fee.
-                  </div>
-                  <Button
-                    onClick={submitBelief}
-                    disabled={isBelieving || !walletAddress}
-                    className="w-full rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
-                  >
-                    {isBelieving ? "Staking..." : "Believe in them"}
-                  </Button>
+            
+            <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-black uppercase leading-[0.9] mb-6">
+              {activeCommitment.title}
+            </h1>
+            
+            <div className="flex flex-wrap items-center gap-6 py-6 border-y border-black/5">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-full bg-black/5 flex items-center justify-center overflow-hidden border border-black/5">
+                  <span className="text-sm font-black text-black/20">{activeCommitment.makerName[0]}</span>
                 </div>
-              </DialogContent>
-            </Dialog>
-            {isMaker && activeCommitment.status === "ACTIVE" && activeCommitment.proofCount < activeCommitment.totalDays ? (
-              <Dialog onOpenChange={(open) => !open && resetProofForm()}>
+                <div className="flex flex-col">
+                  <span className="text-xs font-black text-black/40 uppercase tracking-widest">Maker</span>
+                  <span className="text-sm font-bold text-black flex items-center gap-1">
+                    {activeCommitment.makerHandle}
+                    {activeCommitment.makerVerified && <SealCheck size={14} weight="fill" className="text-oath-gold" />}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-full bg-black/5 flex items-center justify-center border border-black/5">
+                  <Clock size={20} weight="fill" className="text-black/20" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-black text-black/40 uppercase tracking-widest">Timeline</span>
+                  <span className="text-sm font-bold text-black">{activeCommitment.startDateLabel} — {activeCommitment.endDateLabel}</span>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-8 pt-4 space-y-8">
+            <div className="grid gap-4 sm:grid-cols-4">
+              <MetricItem icon={<Coins weight="fill" />} label="Stake" value={activeCommitment.stakeLabel} />
+              <MetricItem icon={<Users weight="fill" />} label="Believers" value={activeCommitment.believerCount.toString()} />
+              <MetricItem icon={<Calendar weight="fill" />} label="Days Left" value={activeCommitment.daysRemaining.toString()} />
+              <MetricItem icon={<TrendUp weight="fill" />} label="Progress" value={`${activeCommitment.progressPercent}%`} />
+            </div>
+
+            <div className="relative pt-2">
+              <div className="flex items-center justify-between mb-3 text-[10px] font-black uppercase tracking-widest">
+                <span className="text-black/40">Arena Progress</span>
+                <span className="text-black">Day {activeCommitment.proofCount} of {activeCommitment.totalDays}</span>
+              </div>
+              <Progress value={activeCommitment.progressPercent} className="h-3 bg-black/5 [&>div]:bg-oath-gold rounded-full" />
+            </div>
+
+            <div className="flex flex-wrap gap-3 pt-4">
+              <Dialog open={beliefOpen} onOpenChange={setBeliefOpen}>
                 <DialogTrigger asChild>
-                  <Button className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
-                    Submit today&apos;s proof
+                  <Button className="h-12 rounded-2xl bg-oath-gold text-black hover:bg-black hover:text-oath-gold transition-all px-8 font-black uppercase tracking-widest text-[11px] shadow-lg shadow-oath-gold/20">
+                    Believe in them
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="sm:max-w-lg bg-white border-black/5 rounded-[2rem]">
                   <DialogHeader>
-                    <DialogTitle>Day {activeCommitment.proofCount + 1} proof</DialogTitle>
+                    <DialogTitle className="text-2xl font-black uppercase tracking-tight">Co-Stake on Faith</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-                        Goal
-                      </p>
-                      <p className="mt-2 text-sm text-foreground">{activeCommitment.title}</p>
+                  <div className="space-y-6 pt-4">
+                    <div className="p-5 bg-black/[0.02] rounded-2xl border border-black/5">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-black/30 mb-2">Target Commitment</p>
+                      <p className="text-sm font-bold text-black">{activeCommitment.title}</p>
                     </div>
-                    <Textarea
-                      value={proofText}
-                      onChange={(event) => setProofText(event.target.value)}
-                      placeholder="Write your proof here"
-                      className="min-h-32 border-oath-border bg-background/50"
-                    />
-                    <Input
-                      value={publicNote}
-                      onChange={(event) => setPublicNote(event.target.value)}
-                      placeholder="Optional public note"
-                      className="border-oath-border bg-background/50"
-                    />
-                    <div className="space-y-2 rounded-[var(--radius)] border border-oath-border bg-background/40 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Photo proof</p>
-                          <p className="text-xs text-oath-muted-text">
-                            Upload an image as proof                          </p>
-                        </div>
-                        <Badge variant="outline" className="border-oath-border text-oath-muted-text">
-                          Optional
-                        </Badge>
-                      </div>
+                    <div className="space-y-3">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-black/40">Stake Amount (SOL)</p>
                       <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleProofImageChange}
-                        className="border-oath-border bg-background/50 file:rounded-none file:border-0 file:bg-transparent file:text-xs file:font-medium file:text-foreground"
+                        type="number"
+                        step="0.05"
+                        min="0.05"
+                        value={beliefAmount}
+                        onChange={(event) => setBeliefAmount(event.target.value)}
+                        className="h-14 bg-white border-black/10 rounded-2xl font-mono font-black text-lg focus:ring-oath-gold"
                       />
-                      {isUploadingImage ? (
-                        <p className="text-xs text-oath-muted-text">Uploading image...</p>
-                      ) : proofImageUrl ? (
-                        <p className="text-xs text-oath-green">Image uploaded and ready to attach.</p>
-                      ) : proofImageFile ? (
-                        <p className="text-xs text-oath-muted-text">{proofImageFile.name}</p>
-                      ) : (
-                        <p className="text-xs text-oath-muted-text">No image selected.</p>
-                      )}
                     </div>
                     <Button
-                      onClick={submitProof}
-                      disabled={
-                        isPending ||
-                        isUploadingImage ||
-                        proofText.trim().length === 0 ||
-                        !walletAddress
-                      }
-                      className="w-full rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
+                      onClick={submitBelief}
+                      disabled={isBelieving || !walletAddress}
+                      className="w-full h-14 rounded-2xl bg-oath-gold text-black hover:bg-black hover:text-oath-gold font-black uppercase tracking-widest transition-all"
                     >
-                      {isPending ? "Submitting..." : "Submit proof"}
+                      {isBelieving ? "Processing..." : "Confirm Co-Stake"}
                     </Button>
                   </div>
                 </DialogContent>
               </Dialog>
-            ) : null}
-            {!isPrivateCommitment || accessToken ? (
-              <Button
-                variant="outline"
-                className="rounded-[var(--radius)] border-oath-border bg-background/40"
-                onClick={copyLink}
-              >
-                {isPrivateCommitment ? "Copy shared link" : "Copy link"}
-              </Button>
-            ) : isMaker ? (
-              <Button
-                variant="outline"
-                className="rounded-[var(--radius)] border-oath-border bg-background/40"
-                onClick={createPrivateShareLink}
-                disabled={isGeneratingShareLink}
-              >
-                {isGeneratingShareLink ? "Generating..." : "Copy private link"}
-              </Button>
-            ) : null}
-            <Button
-              variant="ghost"
-              className="rounded-[var(--radius)] text-oath-black hover:bg-oath-gold/10 hover:text-oath-black"
-              onClick={() => setShareOpen(true)}
-            >
-              Share
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      <div className="space-y-6">
-        <Card className="border-oath-border bg-card">
-          <CardHeader>
-            <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
-              Proof feed
+              {isMaker && activeCommitment.status === "ACTIVE" && activeCommitment.proofCount < activeCommitment.totalDays && (
+                <Dialog onOpenChange={(open) => !open && resetProofForm()}>
+                  <DialogTrigger asChild>
+                    <Button className="h-12 rounded-2xl bg-black text-white hover:bg-oath-gold hover:text-black transition-all px-8 font-black uppercase tracking-widest text-[11px]">
+                      Submit proof
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-lg bg-white border-black/5 rounded-[2rem]">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-black uppercase tracking-tight">Daily Arena Report</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6 pt-4">
+                      <Textarea
+                        value={proofText}
+                        onChange={(event) => setProofText(event.target.value)}
+                        placeholder="What did you achieve today?"
+                        className="min-h-40 bg-white border-black/10 rounded-2xl p-5 focus:ring-oath-gold font-medium"
+                      />
+                      <div className="p-6 bg-black/[0.02] rounded-2xl border border-black/5 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-black/40 flex items-center gap-2">
+                            Visual Proof (Optional)
+                          </p>
+                        </div>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProofImageChange}
+                          className="bg-white border-black/10 rounded-xl"
+                        />
+                      </div>
+                      <Button
+                        onClick={submitProof}
+                        disabled={isPending || isUploadingImage || proofText.trim().length === 0}
+                        className="w-full h-14 rounded-2xl bg-black text-white hover:bg-oath-gold hover:text-black font-black uppercase tracking-widest transition-all"
+                      >
+                        {isPending ? "Broadcasting..." : "Publish to Arena"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+
+              <Button
+                variant="outline"
+                className="h-12 rounded-2xl border-black/5 bg-white hover:bg-black hover:text-white transition-all px-6 font-black uppercase tracking-widest text-[10px]"
+                onClick={() => setShareOpen(true)}
+              >
+                <ShareNetwork size={16} className="mr-2" /> Share
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Proof Feed */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-black/40 flex items-center gap-2">
+              <Lightning size={14} weight="fill" /> Arena Timeline
+            </h2>
+            <Badge variant="outline" className="border-black/5 text-black/20 text-[9px] font-black uppercase tracking-widest">
+              Live Feed
             </Badge>
-            <CardTitle className="text-2xl tracking-[-0.03em]">Daily updates</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 pb-6">
+          </div>
+
+          <div className="space-y-4">
             {activeCommitment.proofSamples.length > 0 ? (
               activeCommitment.proofSamples.map((proof) => (
                 <div
-                  key={proof.dayNumber}
-                  className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4"
+                  key={proof.id}
+                  className="bg-white rounded-[2rem] border border-black/5 p-8 hover:shadow-xl transition-all group"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-foreground">Day {proof.dayNumber}</p>
-                    <p className="text-xs text-oath-muted-text">{proof.createdAtLabel}</p>
-                  </div>
-                  <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                    {proof.textContent}
-                  </p>
-                  {proof.imageUrl ? (
-                    <a
-                      href={proof.imageUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-3 block overflow-hidden rounded-[var(--radius)] border border-oath-border"
-                    >
-                      <div
-                        className="h-48 w-full bg-cover bg-center"
-                        style={{ backgroundImage: `url(${proof.imageUrl})` }}
-                        aria-label={`Proof day ${proof.dayNumber}`}
-                      />
-                    </a>
-                  ) : null}
-                  {proof.linkUrl ? (
-                    <a
-                      href={proof.linkUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-3 inline-flex rounded-[var(--radius)] border border-oath-border px-3 py-1 text-xs text-oath-black hover:bg-oath-gold/10"
-                    >
-                      Open link
-                    </a>
-                  ) : null}
-                  {proof.publicNote ? (
-                    <p className="mt-3 text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-                      {proof.publicNote}
-                    </p>
-                  ) : null}
-                  <div className="mt-4">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="size-8 rounded-full bg-oath-gold flex items-center justify-center border border-black/5">
+                        <span className="text-[10px] font-black text-black">DAY {proof.dayNumber}</span>
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-black/20">{proof.createdAtLabel}</span>
+                    </div>
                     <ProofReactionStrip
                       proofId={proof.id}
                       initialCounts={proof.reactionCounts}
                     />
                   </div>
+                  
+                  <p className="text-lg font-medium leading-relaxed text-black/80 mb-6">
+                    {proof.textContent}
+                  </p>
+
+                  {proof.imageUrl && (
+                    <div className="rounded-[1.5rem] overflow-hidden border border-black/5 mb-6">
+                      <img src={proof.imageUrl} alt={`Day ${proof.dayNumber} proof`} className="w-full h-auto" />
+                    </div>
+                  )}
+
+                  {proof.publicNote && (
+                    <div className="flex items-start gap-2 p-4 bg-black/[0.02] rounded-xl border border-black/5">
+                      <ChatCircle size={14} className="text-black/40 mt-0.5" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-black/30">
+                        Coach Note: {proof.publicNote}
+                      </p>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
-              <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 text-sm text-muted-foreground">
-                No proof yet. This streak will light up when the first update lands.
+              <div className="p-20 text-center bg-white rounded-[2rem] border border-dashed border-black/10">
+                <Lightning size={48} className="mx-auto mb-4 text-black/5" />
+                <p className="text-xs font-black uppercase tracking-widest text-black/20">The timeline is empty</p>
+                <p className="text-sm font-medium text-black/10 mt-1">Waiting for the first spark of progress.</p>
               </div>
             )}
-          </CardContent>
+          </div>
+        </div>
+
+        {/* Comments Section */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-black/40 flex items-center gap-2">
+              <ChatCircle size={14} weight="fill" /> Tribe Discussion
+            </h2>
+          </div>
+
+          <Card className="border-black/5 bg-white p-8 rounded-[2rem] shadow-sm">
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-black/40">Add to the conversation</p>
+                <Textarea
+                  value={comment}
+                  onChange={(event) => setComment(event.target.value)}
+                  placeholder="What's your take?"
+                  className="min-h-32 bg-black/[0.02] border-black/5 rounded-2xl p-5 focus:ring-oath-gold font-medium"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => submitComment()}
+                    disabled={isCommenting || comment.trim().length === 0 || !walletAddress}
+                    className="h-12 rounded-2xl bg-black text-white hover:bg-oath-gold hover:text-black transition-all px-8 font-black uppercase tracking-widest text-[10px]"
+                  >
+                    {isCommenting ? "Broadcasting..." : "Post Comment"}
+                  </Button>
+                </div>
+              </div>
+
+              {activeCommitment.comments.length > 0 ? (
+                <div className="space-y-6 pt-6 border-t border-black/5">
+                  {activeCommitment.comments.map((commentItem) => (
+                    <CommentThread
+                      key={commentItem.id}
+                      node={commentItem}
+                      depth={0}
+                      activeReplyId={activeReplyId}
+                      replyDrafts={replyDrafts}
+                      onReplyChange={(commentId, value) =>
+                        setReplyDrafts((current) => ({
+                          ...current,
+                          [commentId]: value,
+                        }))
+                      }
+                      onStartReply={setActiveReplyId}
+                      onCancelReply={() => setActiveReplyId(null)}
+                      onSubmitReply={(commentId) => submitComment(commentId)}
+                      isSubmitting={isCommenting}
+                      walletConnected={Boolean(walletAddress)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="p-10 text-center bg-black/[0.01] rounded-2xl border border-dashed border-black/10">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-black/20">Silence in the arena</p>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <div className="space-y-8">
+        <Card className="border-black/5 bg-white p-8 rounded-[2rem] shadow-sm">
+          <BelieversList believers={activeCommitment.believers} totalCount={activeCommitment.believerCount} />
         </Card>
 
-        {isMaker ? (
-          <Card className="border-oath-border bg-card">
-            <CardHeader>
-              <Badge className="w-fit bg-oath-green/10 text-oath-green hover:bg-oath-green/20">
-                Coach notes
-              </Badge>
-              <CardTitle className="text-2xl tracking-[-0.03em]">Immediate response</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pb-6">
-              {activeCommitment.coachMessages.map((message) => (
-                <div
-                  key={message.createdAtLabel + message.content}
-                  className="rounded-[var(--radius)] border-l-4 border-oath-gold bg-background/40 p-4"
-                >
-                  <p className="text-sm leading-7 text-muted-foreground">{message.content}</p>
+        <Card className="border-black/5 bg-white p-8 rounded-[2rem] shadow-sm">
+          <CheerWall commitmentId={activeCommitment.id} />
+        </Card>
+
+        {activeCommitment.coachMessages.length > 0 && (
+          <Card className="border-black/5 bg-black p-8 rounded-[2rem] shadow-2xl">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-6 flex items-center gap-2">
+              <SealCheck size={14} weight="fill" className="text-oath-gold" /> AI Coach's Take
+            </h3>
+            <div className="space-y-6">
+              {activeCommitment.coachMessages.map((message, idx) => (
+                <div key={idx} className="space-y-2 border-l-2 border-oath-gold/30 pl-4 py-1">
+                  <p className="text-sm font-medium text-white leading-relaxed">{message.content}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-white/20">{message.createdAtLabel}</p>
                 </div>
               ))}
-            </CardContent>
-          </Card>
-        ) : null}
-
-        <Card className="border-oath-border bg-card">
-          <CardHeader>
-            <Badge className="w-fit bg-oath-blue/10 text-oath-blue hover:bg-oath-blue/20">
-              Comments
-            </Badge>
-            <CardTitle className="text-2xl tracking-[-0.03em]">What the tribe is saying</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 pb-8">
-            <div className="space-y-4 rounded-[var(--radius)] border border-oath-border bg-background/40 p-6">
-              <p className="text-base font-semibold">Add a comment</p>
-              <Textarea
-                value={comment}
-                onChange={(event) => setComment(event.target.value)}
-                placeholder="Leave a comment"
-                className="min-h-28 border-oath-border bg-background/50"
-              />
-              <Button
-                onClick={() => submitComment()}
-                disabled={isCommenting || comment.trim().length === 0 || !walletAddress}
-                className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90"
-              >
-                {isCommenting ? "Posting..." : "Post comment"}
-              </Button>
             </div>
+          </Card>
+        )}
 
-            {activeCommitment.comments.length > 0 ? (
-              <div className="space-y-3">
-                {activeCommitment.comments.map((commentItem) => (
-                  <CommentThread
-                    key={commentItem.id}
-                    node={commentItem}
-                    depth={0}
-                    activeReplyId={activeReplyId}
-                    replyDrafts={replyDrafts}
-                    onReplyChange={(commentId, value) =>
-                      setReplyDrafts((current) => ({
-                        ...current,
-                        [commentId]: value,
-                      }))
-                    }
-                    onStartReply={setActiveReplyId}
-                    onCancelReply={() => setActiveReplyId(null)}
-                    onSubmitReply={(commentId) => submitComment(commentId)}
-                    isSubmitting={isCommenting}
-                    walletConnected={Boolean(walletAddress)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-4 text-sm text-muted-foreground">
-                No comments yet. Be the first to react.
-              </div>
+        {!isMaker && (
+          <>
+            <Button 
+              className="w-full h-14 rounded-2xl bg-black text-white hover:bg-oath-gold hover:text-black font-black uppercase tracking-widest transition-all border border-black/5 flex items-center gap-2"
+              onClick={() => setChallengeOpen(true)}
+            >
+              <Megaphone size={18} weight="fill" /> Challenge Maker
+            </Button>
+            {activeCommitment && (
+              <ChallengeModal
+                open={challengeOpen}
+                onOpenChange={setChallengeOpen}
+                targetWallet={activeCommitment.makerWalletAddress}
+                targetHandle={activeCommitment.makerHandle}
+              />
             )}
-          </CardContent>
-        </Card>
+          </>
+        )}
       </div>
 
       {activeCommitment && (
@@ -963,13 +954,13 @@ function CommentThread({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function MetricItem({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius)] border border-oath-border bg-background/40 p-5">
-      <p className="text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text">
-        {label}
+    <div className="p-4 bg-black/[0.02] rounded-2xl border border-black/5">
+      <p className="text-[9px] font-black uppercase tracking-widest text-black/30 flex items-center gap-1.5 mb-1">
+        <span className="text-black/10">{icon}</span> {label}
       </p>
-      <p className="mt-1 font-mono text-sm text-foreground">{value}</p>
+      <p className="text-sm font-mono font-black text-black">{value}</p>
     </div>
   );
 }

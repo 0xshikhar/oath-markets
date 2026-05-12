@@ -14,6 +14,8 @@ import { SharePlatformsGrid, getShareUrl } from "./share-platforms-grid";
 import { ShareActionsRow } from "./share-actions-row";
 import type { SharePlatform } from "./share-platform-button";
 import type { CommitmentDetail } from "@/lib/oath-data";
+import { useWallet } from "../../lib/wallet/context";
+import { sameWalletAddress } from "@/lib/oath-access";
 
 interface CommitmentShareDialogProps {
   open: boolean;
@@ -26,18 +28,32 @@ export function CommitmentShareDialog({
   onOpenChange,
   commitment,
 }: CommitmentShareDialogProps) {
+  const { wallet } = useWallet();
+  const walletAddress = wallet?.account.address;
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const [shareImageDataUrl, setShareImageDataUrl] = useState<string | null>(null);
-  
-  const progressText = commitment.progressPercent > 0 
-    ? `${commitment.progressPercent}% done` 
-    : `Starting a ${commitment.totalDays}-day journey`;
+
+  // Dynamic Social Templates
+  const getShareText = () => {
+    const isMaker = walletAddress && sameWalletAddress(commitment.makerWalletAddress, walletAddress);
+    const isBeliever = walletAddress && commitment.believers.some(b => sameWalletAddress(b.walletAddress, walletAddress));
     
-  const believersText = commitment.believerCount > 0 
-    ? `(${commitment.believerCount} believers backing me)` 
-    : '';
+    if (isMaker) {
+      return `I just staked ${commitment.stakeLabel} on myself — committing to "${commitment.title}" for ${commitment.totalDays} days.\n\n${commitment.believerCount} people are already watching. Follow my progress 👇\n\n${shareUrl} #OATH #Solana`;
+    }
     
-  const shareText = `I just made a commitment on Oath Markets: "${commitment.title}" - staking ${commitment.stakeLabel} for ${commitment.totalDays} days. ${progressText} ${believersText}. Watch my progress or back me!`;
+    if (isBeliever) {
+      return `I just co-staked on ${commitment.makerHandle} completing their "${commitment.title}" streak.\n\n${commitment.daysRemaining} days left. Let's go 🔥\n\n${shareUrl} #OATH`;
+    }
+
+    if (commitment.isAtRisk) {
+      return `${commitment.makerHandle} is on Day ${commitment.proofCount}/${commitment.totalDays} of "${commitment.title}" with ${commitment.stakeLabel} at stake and hasn't submitted proof today.\n\nThis is getting interesting 👀\n\n${shareUrl} #OATH`;
+    }
+
+    return `Watching ${commitment.makerHandle} attempt "${commitment.title}" on OATH. ${commitment.believerCount} believers are backing them. Check it out 👇\n\n${shareUrl} #OATH`;
+  };
+
+  const shareText = getShareText();
 
   const handleShare = (platform: SharePlatform) => {
     const url = getShareUrl(platform, shareUrl, shareText);

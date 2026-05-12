@@ -20,7 +20,7 @@ function PrivyHydrationGate({ children }: PropsWithChildren) {
   }, []);
 
   if (!mounted) {
-    return <WalletProvider mode="loading">{children}</WalletProvider>;
+    return <WalletProvider key="hydrating-wallet" mode="loading">{children}</WalletProvider>;
   }
 
   return (
@@ -29,7 +29,7 @@ function PrivyHydrationGate({ children }: PropsWithChildren) {
       {...(PRIVY_CLIENT_ID ? { clientId: PRIVY_CLIENT_ID } : {})}
       config={privyConfig}
     >
-      <WalletProvider mode="privy">{children}</WalletProvider>
+      <WalletProvider key="privy-wallet" mode="privy">{children}</WalletProvider>
     </PrivyProvider>
   );
 }
@@ -39,19 +39,19 @@ export function Providers({ children }: PropsWithChildren) {
   return (
     <ClusterProvider>
       {HAS_PRIVY_APP_ID ? (
-        <PrivyHydrationGate>
+        <PrivyHydrationGate key="privy-gate">
           <QueryClientProvider client={queryClient}>
             <SolanaClientProvider>{children}</SolanaClientProvider>
           </QueryClientProvider>
         </PrivyHydrationGate>
       ) : (
-        <WalletProvider mode="loading">
+        <WalletProvider mode="loading" key="loading-gate">
           <QueryClientProvider client={queryClient}>
             <SolanaClientProvider>{children}</SolanaClientProvider>
           </QueryClientProvider>
         </WalletProvider>
       )}
-      <Toaster position="bottom-right" richColors />
+      <Toaster key="app-toaster" position="bottom-right" richColors />
     </ClusterProvider>
   );
 }

@@ -25,7 +25,9 @@ import { useWallet } from "../lib/wallet/context";
 import { useSendTransaction } from "../lib/hooks/use-send-transaction";
 import { useSolanaClient } from "../lib/solana-client-context";
 import type { DashboardView, CommitmentSummary } from "@/lib/oath-data";
+import type { SocialPulseResult } from "@/lib/social-data";
 import { useCluster } from "./cluster-context";
+import { Fire, Trophy, Users, Bell, ChartLineUp } from "@phosphor-icons/react/dist/ssr";
 
 type DashboardApiResponse =
   | {
@@ -36,6 +38,10 @@ type DashboardApiResponse =
     ok: false;
     error?: string;
   };
+
+type SocialPulseApiResponse =
+  | (SocialPulseResult & { ok: true })
+  | { ok: false; error?: string };
 
 type DashboardClientProps = {
   summary: DashboardView;
@@ -62,6 +68,15 @@ async function fetchDashboardSummary(
   return data.summary;
 }
 
+async function fetchSocialPulse(walletAddress: string): Promise<SocialPulseResult> {
+  const response = await fetch(`/api/dashboard/pulse?walletAddress=${encodeURIComponent(walletAddress)}`);
+  const data = (await response.json()) as SocialPulseApiResponse;
+  if (!response.ok || !data.ok) {
+    throw new Error("Unable to load social pulse");
+  }
+  return data;
+}
+
 export function DashboardClient({ summary }: DashboardClientProps) {
   const { wallet, signer } = useWallet();
   const { send } = useSendTransaction();
@@ -78,8 +93,10 @@ export function DashboardClient({ summary }: DashboardClientProps) {
   const [dashboardState, setDashboardState] = useState<{
     walletAddress?: string;
     summary: DashboardView;
+    pulse: SocialPulseResult | null;
   }>({
     summary,
+    pulse: null,
   });
   const [isPending, startTransition] = useTransition();
 
@@ -88,6 +105,11 @@ export function DashboardClient({ summary }: DashboardClientProps) {
     walletAddress && dashboardState.walletAddress === walletAddress
       ? dashboardState.summary
       : summary;
+  const socialPulse = 
+    walletAddress && dashboardState.walletAddress === walletAddress
+      ? dashboardState.pulse
+      : null;
+
   const isSummaryLoading =
     Boolean(walletAddress) && dashboardState.walletAddress !== walletAddress;
 
@@ -96,8 +118,11 @@ export function DashboardClient({ summary }: DashboardClientProps) {
       return;
     }
 
-    const nextSummary = await fetchDashboardSummary(walletAddress);
-    setDashboardState({ walletAddress, summary: nextSummary });
+    const [nextSummary, nextPulse] = await Promise.all([
+      fetchDashboardSummary(walletAddress),
+      fetchSocialPulse(walletAddress)
+    ]);
+    setDashboardState({ walletAddress, summary: nextSummary, pulse: nextPulse });
   };
 
   useEffect(() => {
@@ -109,15 +134,19 @@ export function DashboardClient({ summary }: DashboardClientProps) {
 
     void (async () => {
       try {
-        const nextSummary = await fetchDashboardSummary(walletAddress);
+        const [nextSummary, nextPulse] = await Promise.all([
+          fetchDashboardSummary(walletAddress),
+          fetchSocialPulse(walletAddress)
+        ]);
         if (!cancelled) {
-          setDashboardState({ walletAddress, summary: nextSummary });
+          setDashboardState({ walletAddress, summary: nextSummary, pulse: nextPulse });
         }
       } catch {
         if (!cancelled) {
           setDashboardState({
             walletAddress,
             summary: { active: [], completed: [], failed: [], inbox: [] },
+            pulse: null
           });
         }
       }
@@ -280,10 +309,21 @@ export function DashboardClient({ summary }: DashboardClientProps) {
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.error ?? "Proof failed");
-        toast.success(
-          onchainTxSig ? "Proof submitted on-chain." : "Proof submitted.",
-          fallbackDescription ? { description: fallbackDescription } : undefined
-        );
+        
+        // Milestone Prompt Logic
+        const isMilestone = [7, 14, 21, 30, 60, 90, 100].includes(dayNumber);
+        if (isMilestone) {
+          toast.success(`🔥 MILESTONE REACHED: Day ${dayNumber}!`, {
+            description: "Your streak is legendary. Share this moment to rally your believers!",
+            duration: 10000,
+          });
+        } else {
+          toast.success(
+            onchainTxSig ? "Proof submitted on-chain." : "Proof submitted.",
+            fallbackDescription ? { description: fallbackDescription } : undefined
+          );
+        }
+
         resetProofForm();
         try {
           await refreshSummary();
@@ -345,19 +385,109 @@ export function DashboardClient({ summary }: DashboardClientProps) {
         </CardHeader>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Metric label="Active" value={dashboardSummary.active.length.toString()} />
         <Metric label="Completed" value={dashboardSummary.completed.length.toString()} />
         <Metric label="Failed" value={dashboardSummary.failed.length.toString()} />
+        <Metric label="Reactions" value={socialPulse?.totalReactionsReceived?.toString() ?? "0"} />
       </div>
 
       <Tabs defaultValue="active" className="space-y-4">
         <TabsList className="bg-muted">
           <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="social" className="gap-2">
+            Social Arena
+            {socialPulse?.notifications && socialPulse.notifications.length > 0 && (
+              <span className="flex h-2 w-2 rounded-full bg-oath-gold animate-pulse" />
+            )}
+          </TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="failed">Failed</TabsTrigger>
           <TabsTrigger value="coach">Coach inbox</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="social" className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Notifications Column */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Bell size={18} className="text-oath-gold" />
+                <h3 className="text-sm font-black uppercase tracking-widest text-black/40">Engagement Feed</h3>
+              </div>
+              
+              {socialPulse?.notifications && socialPulse.notifications.length > 0 ? (
+                socialPulse.notifications.map((n) => (
+                  <Card key={n.id} className="border-black/5 bg-white shadow-sm overflow-hidden group">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="size-10 rounded-xl bg-black/5 flex items-center justify-center overflow-hidden">
+                        {n.actorAvatarUrl ? (
+                          <img src={n.actorAvatarUrl} alt={n.actorName} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-black">{n.actorName.charAt(0)}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-black leading-tight">
+                          <span className="font-black">{n.actorName}</span>{" "}
+                          <span className="text-black/50">{n.title}</span>
+                        </p>
+                        <p className="text-[10px] font-bold text-black/20 uppercase tracking-widest mt-1">
+                          {n.actorHandle}
+                        </p>
+                      </div>
+                      <Button asChild variant="ghost" size="sm" className="rounded-lg h-8 px-3 text-[9px] font-black uppercase tracking-widest hover:bg-oath-gold hover:text-black">
+                        <Link href={n.publicUrl}>View</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <EmptyState text="No social activity yet. Share your oaths to attract believers!" />
+              )}
+            </div>
+
+            {/* Believer Insights Column */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <ChartLineUp size={18} className="text-oath-gold" />
+                <h3 className="text-sm font-black uppercase tracking-widest text-black/40">Top Believers</h3>
+              </div>
+
+              {socialPulse?.believerInsights && socialPulse.believerInsights.length > 0 ? (
+                <Card className="border-black/5 bg-white shadow-sm rounded-[1.5rem] overflow-hidden">
+                  <CardContent className="p-0">
+                    {socialPulse.believerInsights.map((bi, idx) => (
+                      <div key={bi.walletAddress} className={`p-4 flex items-center gap-3 ${idx !== 0 ? "border-t border-black/5" : ""}`}>
+                        <div className="size-8 rounded-lg bg-black/5 flex items-center justify-center overflow-hidden shrink-0">
+                          {bi.avatarUrl ? (
+                            <img src={bi.avatarUrl} alt={bi.handle} className="h-full w-full object-cover" />
+                          ) : (
+                            <Users size={14} className="text-black/20" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-black text-black truncate">{bi.handle}</p>
+                          <p className="text-[9px] font-bold text-oath-gold uppercase tracking-widest">{bi.totalStakedLabel} Staked</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-black">{bi.beliefCount}</p>
+                          <p className="text-[8px] font-bold text-black/20 uppercase tracking-widest">Oaths</p>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border-black/5 bg-black/[0.02] border-dashed">
+                  <CardContent className="p-8 text-center">
+                    <Users size={24} className="mx-auto text-black/10 mb-2" />
+                    <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest">No believers yet</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
 
         <TabsContent value="active" className="space-y-4">
           {dashboardSummary.active.map((commitment) => (

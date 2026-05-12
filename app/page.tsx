@@ -8,6 +8,7 @@ import { FeaturedCommitmentsSection } from "@/components/landing/featured-commit
 import { FAQSection } from "@/components/landing/faq-section";
 import { TeamSection } from "@/components/landing/team-section";
 import { TestimonialsSection } from "@/components/landing/testimonials-section";
+import { ActivityTicker } from "@/components/activity-ticker";
 
 export default function Home() {
   return (
@@ -18,6 +19,11 @@ export default function Home() {
 
         <main className="mx-auto max-w-[1140px] px-4 pb-20 pt-10 sm:px-6 lg:px-8 space-y-32 sm:space-y-48">
           <HeroSection />
+        </main>
+
+        <ActivityTicker />
+
+        <main className="mx-auto max-w-[1140px] px-4 pb-20 sm:px-6 lg:px-8 space-y-32 sm:space-y-48">
           <HowItWorksSection />
           <BelieverEconomySection />
           <FeaturedCommitmentsSection />

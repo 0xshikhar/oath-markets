@@ -1,100 +1,117 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import type { CommitmentSummary } from "@/lib/oath-data";
+import { 
+  Fire, 
+  Lightning, 
+  Eye, 
+  Skull, 
+  Users, 
+  Coins, 
+  Calendar,
+  SealCheck
+} from "@phosphor-icons/react/dist/ssr";
+import { cn } from "@/lib/utils";
 
 type CommitmentCardProps = {
   commitment: CommitmentSummary;
   compact?: boolean;
 };
 
-const statusTone: Record<string, string> = {
-  ACTIVE: "border-oath-gold/40 bg-oath-gold/10 text-foreground",
-  COMPLETED: "border-oath-green/30 bg-oath-green/10 text-oath-green",
-  FAILED: "border-oath-red/30 bg-oath-red/10 text-oath-red",
-  ABANDONED: "border-border bg-muted text-muted-foreground",
-};
-
 export function CommitmentCard({ commitment, compact = false }: CommitmentCardProps) {
+  const isHealthy = !commitment.isAtRisk && commitment.status === "ACTIVE";
+  const isFailed = commitment.status === "FAILED";
+  const isCompleted = commitment.status === "COMPLETED";
+
   return (
-    <Card className="group flex h-full flex-col overflow-hidden border-oath-border bg-card transition-transform duration-300 hover:-translate-y-0.5">
-      <CardHeader className={compact ? "space-y-4 p-5" : "space-y-4 p-6"}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              variant="outline"
-              className="border-oath-border bg-background text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
-            >
-              {commitment.category}
-            </Badge>
-            <Badge
-              variant="outline"
-              className="border-oath-border bg-background text-[0.65rem] uppercase tracking-[0.22em] text-oath-muted-text"
-            >
-              {commitment.coachToneLabel}
-            </Badge>
+    <Link href={commitment.publicUrl} className="block h-full">
+      <Card className={cn(
+        "group relative flex h-full flex-col overflow-hidden border-black/5 bg-white transition-all duration-300 hover:shadow-2xl hover:-translate-y-1",
+        isHealthy && "border-l-4 border-l-oath-gold",
+        commitment.isAtRisk && "border-l-4 border-l-red-500 shadow-[0_0_20px_rgba(239,68,68,0.1)]",
+        isCompleted && "border-l-4 border-l-black"
+      )}>
+        <CardHeader className={compact ? "p-5" : "p-6 pb-2"}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-black/5 border-transparent text-[9px] font-black uppercase tracking-widest text-black/40">
+                {commitment.category}
+              </Badge>
+              {commitment.isAtRisk && (
+                <Badge className="bg-red-500 text-white border-transparent text-[9px] font-black uppercase tracking-widest animate-pulse">
+                  At Risk
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-mono font-black text-black/20 uppercase">
+              <Calendar size={12} />
+              {commitment.daysRemaining} Days Left
+            </div>
           </div>
-          <span
-            className={`rounded-[var(--radius)] border px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em] ${statusTone[commitment.status] ?? statusTone.ACTIVE
-              }`}
-          >
-            {commitment.statusLabel}
-          </span>
-        </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{commitment.makerName}</span>
-            <span className="text-oath-muted-text">{commitment.makerHandle}</span>
-            {commitment.makerVerified ? (
-              <span className="rounded-[var(--radius)] border border-oath-green/30 bg-oath-green/10 px-2 py-0.5 text-[0.65rem] font-medium text-oath-green">
-                Verified
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 group/maker">
+              <div className="size-5 rounded-full bg-black/5 flex items-center justify-center overflow-hidden">
+                <span className="text-[10px] font-black text-black/20">{commitment.makerName[0]}</span>
+              </div>
+              <span className="text-xs font-bold text-black/60 group-hover/maker:text-black transition-colors">
+                {commitment.makerHandle}
               </span>
-            ) : null}
+              {commitment.makerVerified && <SealCheck size={14} weight="fill" className="text-oath-gold" />}
+            </div>
+            
+            <h3 className="text-xl font-black tracking-tight text-black uppercase leading-tight group-hover:text-oath-gold transition-colors line-clamp-2">
+              {commitment.title}
+            </h3>
           </div>
-          <h3 className="text-2xl font-semibold tracking-tight text-foreground">
-            {commitment.title}
-          </h3>
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            {commitment.description}
-          </p>
-        </div>
-      </CardHeader>
+        </CardHeader>
 
-      <CardContent className={compact ? "flex flex-1 flex-col space-y-4 px-5 pb-5" : "flex flex-1 flex-col space-y-4 px-6 pb-6"}>
-        <Progress value={commitment.progressPercent} className="h-2" />
+        <CardContent className={compact ? "px-5 py-4" : "px-6 py-6"}>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-widest text-black/20 flex items-center gap-1">
+                <Coins size={10} /> Staked
+              </p>
+              <p className="text-sm font-mono font-black text-black">{commitment.stakeLabel}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-widest text-black/20 flex items-center gap-1">
+                <Users size={10} /> Believers
+              </p>
+              <p className="text-sm font-mono font-black text-black">{commitment.believerCount}</p>
+            </div>
+          </div>
 
-        <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-          <Metric label="Staked" value={commitment.stakeLabel} />
-          <Metric label="Believers" value={commitment.believerCount.toString()} />
-          <Metric label="Proofs" value={`${commitment.proofCount}/${commitment.totalDays}`} />
-          <Metric label="Left" value={`${commitment.daysRemaining}d`} />
-        </div>
-      </CardContent>
+          {/* Social Reaction Strip */}
+          <div className="flex items-center gap-3 py-2 px-3 bg-black/[0.02] rounded-xl border border-black/[0.03]">
+            <ReactionItem icon={<Fire size={14} weight="fill" />} count={commitment.reactionCounts.momentum} color="text-orange-500" />
+            <ReactionItem icon={<Lightning size={14} weight="fill" />} count={commitment.reactionCounts.streak} color="text-yellow-500" />
+            <ReactionItem icon={<Eye size={14} weight="fill" />} count={commitment.reactionCounts.watching} color="text-blue-500" />
+            <ReactionItem icon={<Skull size={14} weight="fill" />} count={commitment.reactionCounts.doubt} color="text-red-500" />
+          </div>
+        </CardContent>
 
-      <CardFooter className="mt-auto flex items-center justify-between gap-3 border-t border-oath-border/60 px-6 py-4">
-        <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-          Day {commitment.proofCount} of {commitment.totalDays}
-        </p>
-        <Button asChild size="sm" className="rounded-[var(--radius)] bg-oath-gold text-black hover:bg-oath-gold/90">
-          <Link href={commitment.publicUrl}>View oath</Link>
-        </Button>
-      </CardFooter>
-    </Card>
+        <CardFooter className="mt-auto border-t border-black/5 p-0">
+          <div className="w-full flex items-center justify-between px-6 py-4 bg-transparent group-hover:bg-black transition-colors">
+            <span className="text-[10px] font-black uppercase tracking-widest text-black/40 group-hover:text-white/40 transition-colors">
+              Day {commitment.proofCount} of {commitment.totalDays}
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-black group-hover:text-oath-gold transition-colors flex items-center gap-2">
+              Enter Arena Terminal →
+            </span>
+          </div>
+        </CardFooter>
+      </Card>
+    </Link>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function ReactionItem({ icon, count, color }: { icon: React.ReactNode; count: number; color: string }) {
   return (
-    <div className="flex min-h-24 flex-col justify-between rounded-[var(--radius)] border border-oath-border bg-background px-3 py-3">
-      <p className="text-[0.65rem] uppercase tracking-[0.2em] text-oath-muted-text">
-        {label}
-      </p>
-      <p className="mt-2 break-words font-mono text-sm leading-5 text-foreground">
-        {value}
-      </p>
+    <div className="flex items-center gap-1 text-[10px] font-mono font-black text-black/30">
+      <span className={count > 0 ? color : ""}>{icon}</span>
+      <span>{count}</span>
     </div>
   );
 }

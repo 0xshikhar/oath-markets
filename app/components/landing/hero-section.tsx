@@ -58,7 +58,7 @@ export function HeroSection() {
           </span>
           <span className="flex items-center gap-1 rounded-full border border-oath-border bg-oath-surface/40 px-2 py-1 sm:px-4 sm:py-2">
             <CheckCircle size={12} className="text-oath-gold" />
-            DAILY AI COACHING
+            AI COACH
           </span>
           <span className="flex items-center gap-1 rounded-full border border-oath-border bg-oath-surface/40 px-2 py-1 sm:px-4 sm:py-2">
             <ShieldCheck size={12} className="text-oath-gold" />

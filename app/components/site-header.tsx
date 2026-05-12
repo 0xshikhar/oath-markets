@@ -36,8 +36,8 @@ const ThemeToggle = dynamic(
 
 const navItems = [
   { href: "/explore", label: "Explore" },
-  { href: "/#how-it-works", label: "How It Works" },
-  { href: "/feed", label: "Proof Feed" },
+  { href: "/feed", label: "Arena" },
+  { href: "/profile", label: "Profile" },
 ];
 
 export function SiteHeader() {
