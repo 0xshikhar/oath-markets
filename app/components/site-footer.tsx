@@ -38,22 +38,30 @@ export function SiteFooter() {
     <footer className="relative z-10 bg-background overflow-hidden">
       {/* Final CTA Block */}
       <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8">
-        <div className="py-16 lg:py-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
+        <div className="py-24 lg:py-32">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-5xl font-bold tracking-[-0.04em] sm:text-6xl uppercase">
               READY TO MAKE IT REAL?
             </h2>
-            <p className="mt-4 text-base text-muted-foreground">
-              Stop keeping your goals private.
-              The blockchain doesn&apos;t forget, and neither will you.
+            <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              Stop keeping your goals private. The blockchain doesn&apos;t forget,
+              and neither will you. Start your streak today.
             </p>
-            <div className="mt-10">
+            <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
                 asChild
                 size="lg"
-                className="rounded-lg bg-oath-gold px-10 text-black hover:bg-oath-gold/90 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="rounded-lg bg-oath-gold px-10 py-7 text-base font-bold text-black hover:bg-oath-gold/90 transition-all hover:scale-[1.02] active:scale-[0.98] w-full sm:w-auto shadow-lg shadow-oath-gold/20"
               >
                 <Link href="/create">Make Your First Oath →</Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="rounded-lg border-oath-border px-10 py-7 text-base font-medium hover:bg-oath-surface transition-all w-full sm:w-auto"
+              >
+                <Link href="/explore">Explore the feed</Link>
               </Button>
             </div>
           </div>
@@ -79,18 +87,18 @@ export function SiteFooter() {
               />
             </Link>
             <div className="space-y-1">
-              <p className="text-xs uppercase tracking-[0.22em] text-oath-muted-text">
-                Accountability infrastructure on Solana.
+              <p className="text-[10px] uppercase tracking-[0.3em] text-oath-black font-black">
+                The commitment market on Solana.
               </p>
-              <p className="text-xs text-oath-muted-text/80">
-                Your word, on-chain. Forever.
+              <p className="text-[10px] uppercase tracking-[0.2em] text-oath-muted-text font-medium">
+                Public commitments · Real stakes · Permanent record.
               </p>
             </div>
           </div>
 
           {/* CTA */}
           <div className="hidden shrink-0 items-center gap-3 sm:flex">
-            <span className="rounded-[2px] border border-oath-border bg-oath-surface px-3.5 py-2 text-[0.65rem] uppercase tracking-[0.2em] text-oath-muted-text">
+            <span className="rounded-[4px] border border-oath-border bg-oath-surface/60 px-4 py-2 text-[10px] uppercase tracking-[0.3em] text-oath-muted-text font-bold">
               Built on Solana
             </span>
             <Link
@@ -113,7 +121,7 @@ export function SiteFooter() {
           <div className="grid gap-8 sm:grid-cols-2 lg:flex lg:gap-20">
             {navSections.map((section) => (
               <div key={section.label} className="space-y-6">
-                <p className="text-[0.65rem] uppercase tracking-[0.24em] text-oath-black font-bold">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-oath-black font-black">
                   {section.label}
                 </p>
                 <ul className="space-y-3.5">
@@ -143,7 +151,7 @@ export function SiteFooter() {
 
           {/* Social */}
           <div className="space-y-6 lg:border-l lg:border-oath-border lg:pl-12">
-            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-oath-black font-bold">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-oath-black font-black">
               Follow
             </p>
             <div className="flex items-center gap-4">
@@ -167,7 +175,7 @@ export function SiteFooter() {
 
           {/* Protocol status */}
           <div className="space-y-6 lg:border-l lg:border-oath-border lg:pl-12">
-            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-oath-black font-bold">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-oath-black font-black">
               Status
             </p>
             <div className="space-y-4">
@@ -215,7 +223,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4 py-8">
           <p className="text-[0.65rem] uppercase tracking-[0.16em] text-oath-muted-text/80">
-            © {new Date().getFullYear()} OATH · Accountability Infrastructure · Frontier 2026
+            © {new Date().getFullYear()} OATH · The commitment market on Solana
           </p>
           <div className="flex items-center gap-6">
             <Link
